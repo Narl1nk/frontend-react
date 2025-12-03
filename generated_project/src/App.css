@@ -1,0 +1,39 @@
+/* App.css */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  color: #333;
+}
+.main-content {
+  flex: 1;
+  padding: 1rem;
+}
+.navbar {
+  background-color: #007bff;
+  padding: 0.5rem;
+  color: #fff;
+}
+.layout {
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button:disabled {
+  background-color: #aaa;
+}
+
+button:hover:not(:disabled) {
+  background-color: #0056b3;
+}

@@ -1,0 +1,12 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+export const NotFound: React.FC = () => {
+  return (
+    <div className="not-found-view">
+      <h1>404 - Page Not Found</h1>
+      <p>The page you're looking for doesn't exist.</p>
+      <Link to="/">Go Home</Link>
+    </div>
+  );
+};

@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "name": "User Management System",
+    "total_entities": 1,
+    "entity_complexity": "simple"
+  },
+  "entities": [
+    {
+      "name": "User",
+      "description": "Entity representing a user within the system",
+      "fields": {
+        "id": {
+          "type": "integer",
+          "constraints": ["primary_key", "auto_increment"],
+          "description": "Unique identifier for the user"
+        },
+        "email": {
+          "type": "string",
+          "constraints": ["required", "unique", "max_length:255"],
+          "description": "Email address of the user"
+        },
+        "createdAt": {
+          "type": "datetime",
+          "constraints": ["required"],
+          "description": "Timestamp when the user was created"
+        },
+        "updatedAt": {
+          "type": "datetime",
+          "constraints": ["required"],
+          "description": "Timestamp when user record was last updated"
+        }
+      },
+      "operations": ["create", "read", "update", "delete", "list"],
+      "relationships": []
+    }
+  ],
+  "relationships": [],
+  "frontend_pages": [
+    {
+      "name": "User List",
+      "description": "Displays a list of all users.",
+      "entities_used": ["User"],
+      "operations": ["list"]
+    },
+    {
+      "name": "User Details/View",
+      "description": "Displays details of a selected user.",
+      "entities_used": ["User"],
+      "operations": ["read"]
+    },
+    {
+      "name": "Add User",
+      "description": "Page to add a new user.",
+      "entities_used": ["User"],
+      "operations": ["create"]
+    },
+    {
+      "name": "Edit User",
+      "description": "Edit details of an existing user.",
+      "entities_used": ["User"],
+      "operations": ["update"]
+    },
+    {
+      "name": "Delete User",
+      "description": "Used to delete a user.",
+      "entities_used": ["User"],
+      "operations": ["delete"]
+    }
+  ],
+  "business_logic": {
+    "authentication": {
+      "enabled": true,
+      "method": "token",
+      "login_fields": ["username", "password"],
+      "password_requirements": {
+        "min_length": 8,
+        "require_uppercase": true,
+        "require_lowercase": true,
+        "require_numbers": true,
+        "require_special_chars": false
+      }
+    },
+    "authorization": {
+      "role_based": false,
+      "roles": [],
+      "permissions": {},
+      "resource_permissions": {}
+    }
+  }
+}

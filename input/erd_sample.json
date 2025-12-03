@@ -1,0 +1,139 @@
+{
+  "project_info": {
+    "name": "<Project_Name>",
+    "total_entities": "<Total_Entities_Number>",
+    "entity_complexity": "<simple|moderate|complex>"
+  },
+
+  "entities": [
+    {
+      "name": "<Entity_1>",
+      "description": "<Description_of_Entity_1>",
+      "fields": {
+        "<Field_1>": {
+          "type": "<data_type>",
+          "constraints": ["<constraint_1>", "<constraint_2>"],
+          "description": "<Description_of_Field_1>"
+        },
+        "<Field_2>": {
+          "type": "<data_type>",
+          "constraints": ["<constraint_1>"],
+          "description": "<Description_of_Field_2>"
+        },
+        "<Field_n>": {
+          "type": "<data_type>",
+          "constraints": [],
+          "default_value": "<default_or_null>",
+          "description": "<Description_of_Field_n>"
+        }
+      },
+      "operations": ["create", "read", "update", "delete", "list"],
+      "relationships": [
+        {
+          "type": "<has_many|belongs_to|many_to_many>",
+          "related_entity": "<Entity_2>",
+          "description": "<Description_of_Relationship>"
+        }
+      ]
+    },
+
+    {
+      "name": "<Entity_2>",
+      "description": "<Description_of_Entity_2>",
+      "fields": {
+        "<Field_1>": {
+          "type": "<data_type>",
+          "constraints": ["primary_key"],
+          "description": "<Description>"
+        },
+        "<Field_2>": {
+          "type": "<data_type>",
+          "constraints": ["required"],
+          "description": "<Description>"
+        },
+        "<Field_n>": {
+          "type": "<data_type>",
+          "constraints": [],
+          "default_value": "<default_or_null>",
+          "description": "<Description>"
+        }
+      },
+      "operations": ["create", "read", "update", "delete"],
+      "relationships": [
+        {
+          "type": "<belongs_to|has_many|many_to_many>",
+          "related_entity": "<Entity_1>",
+          "description": "<Description_of_Relationship>"
+        }
+      ]
+    }
+  ],
+
+  "relationships": [
+    {
+      "from_entity": "<Entity_1>",
+      "to_entity": "<Entity_2>",
+      "relationship_type": "<one_to_many|many_to_one|one_to_one|many_to_many>",
+      "foreign_key": "<foreign_key_field>",
+      "description": "<Description_of_The_Relationship>"
+    }
+  ],
+
+  "frontend_pages": [
+    {
+      "name": "<Page_1>",
+      "description": "<Description_of_Page_1>",
+      "entities_used": ["<Entity_1>"],
+      "operations": ["<read|list|create|update|delete>"]
+    },
+    {
+      "name": "<Page_2>",
+      "description": "<Description_of_Page_2>",
+      "entities_used": ["<Entity_1>", "<Entity_2>"],
+      "operations": ["<read|update>"]
+    },
+    {
+      "name": "<Page_n>",
+      "description": "<Description_of_Page_n>",
+      "entities_used": ["<Entity_X>"],
+      "operations": ["<operation_list>"]
+    }
+  ],
+
+  "business_logic": {
+    "authentication": {
+      "enabled": "<true|false>",
+      "method": "<session|token|oauth|none>",
+      "login_fields": ["<Field_1>", "<Field_2>"],
+      "password_requirements": {
+        "min_length": "<number>",
+        "require_uppercase": "<true|false>",
+        "require_lowercase": "<true|false>",
+        "require_numbers": "<true|false>",
+        "require_special_chars": "<true|false>"
+      }
+    },
+    "authorization": {
+      "role_based": "<true|false>",
+      "roles": ["<Role_1>", "<Role_2>"],
+      "permissions": {
+        "<Role_1>": ["<permission_1>", "<permission_2>"],
+        "<Role_2>": ["<permission_n>"]
+      },
+      "resource_permissions": {
+        "<Entity_1>": {
+          "create": ["<Role_1>"],
+          "read": ["<Role_1>", "<Role_2>"],
+          "update": ["<Role_1>"],
+          "delete": ["<Role_1>"]
+        },
+        "<Entity_2>": {
+          "create": ["<Role_1>"],
+          "read": ["<Role_1>"],
+          "update": ["<Role_1>"],
+          "delete": ["<Role_1>"]
+        }
+      }
+    }
+  }
+}
