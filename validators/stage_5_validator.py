@@ -24,6 +24,7 @@ import json
 import re
 from pathlib import Path
 from typing import Dict, List, Set, Optional, Tuple
+from urllib.parse import urlparse
 
 class Colors:
     GREEN = '\033[92m'
@@ -513,6 +514,282 @@ class Stage5Validator:
         
         if file_errors:
             for error in file_errors:
+                self.errors.append(f"{validation_name}: {error}")
+            self.validation_results[validation_name] = False
+        else:
+            self.validation_results[validation_name] = True
+    
+    def validate_backend_api_matching(self):
+        """Validate frontend API calls match OpenAPI backend spec"""
+        validation_name = "Backend API Matching with the one defined inside input/openapi.json"
+        
+        api_errors = []
+        
+        try:
+            # Extract backend URL from openapi.json - try multiple formats
+            backend_url = None
+            
+            # Standard OpenAPI 3.0: servers array
+            openapi_servers = self.openapi_data.get('servers', [])
+            if openapi_servers and len(openapi_servers) > 0:
+                backend_url = openapi_servers[0].get('url', '').rstrip('/')
+            
+            # Alternative: root-level url field
+            if not backend_url:
+                backend_url = self.openapi_data.get('url', '').rstrip('/')
+            
+            # Alternative: host + basePath (OpenAPI 2.0 / Swagger)
+            if not backend_url:
+                host = self.openapi_data.get('host', '')
+                schemes = self.openapi_data.get('schemes', ['http'])
+                basePath = self.openapi_data.get('basePath', '')
+                if host:
+                    backend_url = f"{schemes[0]}://{host}{basePath}".rstrip('/')
+            
+            if not backend_url:
+                self.warnings.append(f"{validation_name}: Could not find backend URL in openapi.json (checked: servers[].url, url, host+basePath)")
+                self.validation_results[validation_name] = True
+                return
+            
+            # Check .env file
+            env_file = self.base_path / ".env"
+            if env_file.exists():
+                with open(env_file, 'r', encoding='utf-8') as f:
+                    env_content = f.read()
+                
+                env_match = re.search(r'VITE_API_BASE_URL\s*=\s*(.+)', env_content)
+                if env_match:
+                    env_url = env_match.group(1).strip().strip('"').strip("'").rstrip('/')
+                    if env_url != backend_url:
+                        api_errors.append(f".env URL mismatch: has '{env_url}', openapi.json expects '{backend_url}'")
+                else:
+                    api_errors.append(".env missing VITE_API_BASE_URL")
+            else:
+                api_errors.append(".env file not found")
+            
+            # Check API config uses environment variable
+            api_config = self.base_path / "src" / "config" / "api.config.ts"
+            api_base_path = ""  # Track if baseURL includes path prefix like /api
+            
+            if api_config.exists():
+                with open(api_config, 'r', encoding='utf-8') as f:
+                    config_content = f.read()
+                
+                if 'import.meta.env.VITE_API_BASE_URL' not in config_content:
+                    api_errors.append("api.config.ts not using import.meta.env.VITE_API_BASE_URL")
+                
+                # Check if baseURL has a path component (e.g., /api)
+                # This affects how services should construct paths
+                base_url_match = re.search(r'baseURL:\s*[\'"`]([^\'"`]+)[\'"`]', config_content)
+                if base_url_match:
+                    # Extract path from hardcoded URL if present
+                    parsed = urlparse(base_url_match.group(1))
+                    api_base_path = parsed.path.rstrip('/')
+            
+            # Extract API endpoints from openapi.json
+            openapi_paths = set(self.openapi_data.get('paths', {}).keys())
+            
+            if not openapi_paths:
+                api_errors.append("No paths found in openapi.json - cannot validate service endpoints")
+                self.validation_results[validation_name] = False
+                return
+            
+            # Print what we found for debugging
+            print(f"\n  [DEBUG] Backend URL: {backend_url}")
+            print(f"  [DEBUG] OpenAPI paths found: {sorted(list(openapi_paths))}")
+            print(f"  [DEBUG] API base path: '{api_base_path}'")
+            
+            # Determine if OpenAPI paths have a common prefix (like /api)
+            openapi_prefix = ""
+            if openapi_paths:
+                sample_paths = list(openapi_paths)
+                # Check if ALL paths start with same prefix
+                if all(p.startswith('/api/') or p == '/api' for p in sample_paths):
+                    openapi_prefix = "/api"
+                    print(f"  [DEBUG] Detected OpenAPI prefix: {openapi_prefix}")
+            
+            # Check service files for endpoint mismatches AND proper API client usage
+            services_dir = self.base_path / "src" / "services"
+            if not services_dir.exists():
+                print(f"  [DEBUG] Services directory not found: {services_dir}")
+                self.validation_results[validation_name] = True
+                return
+            
+            service_files = list(services_dir.glob("*.service.ts"))
+            print(f"  [DEBUG] Found {len(service_files)} service files")
+            
+            if services_dir.exists():
+                for service_file in services_dir.glob("*.service.ts"):
+                    if service_file.name == 'api.ts':
+                        continue
+                    
+                    print(f"\n  [DEBUG] Checking service: {service_file.name}")
+                    
+                    try:
+                        with open(service_file, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                        
+                        # CRITICAL: Check if service imports the API client
+                        has_api_import = "from './api'" in content or 'from "./api"' in content or "from '../config/api" in content
+                        print(f"    - Has API import: {has_api_import}")
+                        
+                        if not has_api_import:
+                            api_errors.append(f"{service_file.name}: Missing API client import. Add: import {{ api }} from './api'")
+                            continue
+                        
+                        # CRITICAL: Check if service actually uses the api client
+                        api_calls = re.findall(r'\bapi\.(get|post|put|patch|delete)\(', content)
+                        print(f"    - API calls found: {len(api_calls)}")
+                        
+                        if not api_calls:
+                            api_errors.append(f"{service_file.name}: Imports 'api' but never calls api.get/post/put/delete methods")
+                            continue
+                        
+                        # Check for direct axios usage (bypassing API client)
+                        if re.search(r'\baxios\.(get|post|put|patch|delete)\(', content):
+                            api_errors.append(f"{service_file.name}: Uses axios directly. Must use 'api.get()' not 'axios.get()' to apply baseURL")
+                        
+                        # Check for hardcoded full URLs
+                        hardcoded = re.findall(r'[\'"`](https?://[^\'"`]+)[\'"`]', content)
+                        if hardcoded:
+                            api_errors.append(f"{service_file.name}: Contains hardcoded URL(s) {hardcoded}. Use 'api.get(\"/path\")' with relative paths")
+                        
+                        # CRITICAL: Extract and validate endpoint paths
+                        endpoints = re.findall(r'api\.\w+\([\'"`](/[^\'"` ]+)[\'"`]', content)
+                        print(f"    - Endpoints extracted: {endpoints}")
+                        
+                        if not endpoints:
+                            # Service uses api client but no endpoints found - might be a parsing issue
+                            self.warnings.append(f"{validation_name}: {service_file.name} uses api client but no endpoints detected (check syntax)")
+                        
+                        # Find line numbers for each endpoint
+                        lines = content.split('\n')
+                        
+                        for endpoint in endpoints:
+                            endpoint_clean = endpoint.rstrip('/')
+                            
+                            # Find which line this endpoint is on
+                            line_num = None
+                            for i, line in enumerate(lines, 1):
+                                if endpoint in line and 'api.' in line:
+                                    line_num = i
+                                    break
+                            
+                            # Construct full path as backend will see it
+                            full_path = f"{api_base_path}{endpoint_clean}"
+                            print(f"    - Checking endpoint: '{endpoint}' → full path: '{full_path}' (line {line_num})")
+                            
+                            # Check if this full path exists in OpenAPI (with variations)
+                            path_found = (
+                                full_path in openapi_paths or
+                                f"{full_path}/" in openapi_paths or
+                                endpoint_clean in openapi_paths or
+                                f"{endpoint_clean}/" in openapi_paths
+                            )
+                            
+                            print(f"      → Path found in OpenAPI: {path_found}")
+                            
+                            if not path_found:
+                                # PATH MISMATCH - This is a CRITICAL ERROR
+                                # Determine what the correct path should be
+                                
+                                location = f"{service_file.name}:{line_num}" if line_num else service_file.name
+                                
+                                # Case 1: OpenAPI has prefix but service endpoint doesn't
+                                if openapi_prefix and not endpoint_clean.startswith(openapi_prefix):
+                                    correct_path = f"{openapi_prefix}{endpoint_clean}"
+                                    if correct_path in openapi_paths or f"{correct_path}/" in openapi_paths:
+                                        api_errors.append(
+                                            f"{location}: API endpoint mismatch\n"
+                                            f"  ❌ Current code: api.XXX('{endpoint}')\n"
+                                            f"  ✓ Should be: api.XXX('{correct_path}')\n"
+                                            f"  → OpenAPI expects: '{correct_path}'\n"
+                                            f"  → Fix: Replace '{endpoint}' with '{correct_path}' on line {line_num}"
+                                        )
+                                    else:
+                                        api_errors.append(
+                                            f"{location}: Endpoint '{endpoint}' does not exist in backend\n"
+                                            f"  → Service calls: api.XXX('{endpoint}')\n"
+                                            f"  → OpenAPI paths use '{openapi_prefix}' prefix\n"
+                                            f"  → Available OpenAPI paths:\n" +
+                                            '\n'.join(f"      • {p}" for p in sorted(openapi_paths)[:10])
+                                        )
+                                
+                                # Case 2: baseURL already has path but service repeats it
+                                elif api_base_path and endpoint_clean.startswith(api_base_path):
+                                    correct_path = endpoint_clean.replace(api_base_path, '', 1)
+                                    api_errors.append(
+                                        f"{location}: Duplicate path prefix\n"
+                                        f"  ❌ Current code: api.XXX('{endpoint}')\n"
+                                        f"  ✓ Should be: api.XXX('{correct_path}')\n"
+                                        f"  → Reason: baseURL already includes '{api_base_path}'\n"
+                                        f"  → Fix: Replace '{endpoint}' with '{correct_path}' on line {line_num}"
+                                    )
+                                
+                                # Case 3: Path simply not in OpenAPI
+                                else:
+                                    # Try to find similar paths
+                                    endpoint_parts = endpoint_clean.split('/')
+                                    last_part = endpoint_parts[-1] if endpoint_parts else ''
+                                    similar = [p for p in openapi_paths if last_part and last_part in p]
+                                    
+                                    error_msg = (
+                                        f"{location}: Endpoint does not exist in backend API\n"
+                                        f"  ❌ Current code: api.XXX('{endpoint}')\n"
+                                        f"  → Full request path will be: '{full_path}'\n"
+                                        f"  → This path NOT FOUND in openapi.json\n"
+                                    )
+                                    if similar:
+                                        error_msg += f"  → Did you mean one of these?\n"
+                                        error_msg += '\n'.join(f"      • {p}" for p in similar[:5])
+                                        error_msg += f"\n  → Fix: Change line {line_num} to use correct path"
+                                    else:
+                                        error_msg += f"  → Available OpenAPI paths:\n"
+                                        error_msg += '\n'.join(f"      • {p}" for p in sorted(openapi_paths)[:10])
+                                        error_msg += f"\n  → Fix: Change line {line_num} to match one of the above paths"
+                                    api_errors.append(error_msg)
+                    except Exception as e:
+                        api_errors.append(f"{service_file.name}: Failed to validate - {str(e)}")
+        
+        except Exception as e:
+            api_errors.append(f"Validation error: {e}")
+        
+        # Create summary of mismatches if any found
+        if api_errors and 'openapi_paths' in locals():
+            print("\n" + "="*70)
+            print("  ENDPOINT MISMATCH SUMMARY")
+            print("="*70)
+            
+            # Collect files that need fixing
+            files_to_fix = set()
+            for error in api_errors:
+                if ':' in error.split('\n')[0]:
+                    file_loc = error.split('\n')[0].split(':')[0]
+                    if file_loc.endswith('.ts'):
+                        files_to_fix.add(file_loc)
+            
+            for i, error in enumerate(api_errors, 1):
+                print(f"\n{i}. {error}")
+            
+            print("\n" + "="*70)
+            print("  AVAILABLE BACKEND ENDPOINTS (from openapi.json):")
+            print("="*70)
+            for path in sorted(openapi_paths):
+                print(f"  • {path}")
+            print("="*70)
+            
+            if files_to_fix:
+                print("\n" + "="*70)
+                print("  ACTION REQUIRED - FILES TO FIX:")
+                print("="*70)
+                for file in sorted(files_to_fix):
+                    file_path = f"generated_project/src/services/{file}"
+                    print(f"  → {file_path}")
+                    print(f"     Edit this file to update API endpoint paths")
+                print("="*70 + "\n")
+        
+        if api_errors:
+            for error in api_errors:
                 self.errors.append(f"{validation_name}: {error}")
             self.validation_results[validation_name] = False
         else:
@@ -1036,6 +1313,7 @@ class Stage5Validator:
         self.validate_html_template()
         self.validate_html_location()  # NEW: Check index.html is in project root
         self.validate_package_json()  # Must run before validate_imports
+        self.validate_backend_api_matching()  # NEW: Check frontend matches backend API
         self.validate_no_previous_modifications()
         self.validate_route_view_matching()  # NEW: Check views match routes
         self.validate_imports()
@@ -1089,10 +1367,44 @@ class Stage5Validator:
         print_info(f"Files with exports validated: {len(self.file_exports)}")
         print_info(f"External packages detected: {len(self.installed_packages)}")
         
+        # Determine overall success based on validation results
+        all_passed = len(failed) == 0
+        
         # Final result
         print()
-        if len(self.errors) > 0:
-            print_error(f"VALIDATION FAILED: {len(self.errors)} error(s), {len(self.warnings)} warning(s)")
+        # Determine overall success based on validation results
+        all_passed = len(failed) == 0
+        
+        if not all_passed:
+            print_error(f"✗ VALIDATION FAILED")
+            print_error(f"  → {len(failed)} validation(s) failed")
+            print_error(f"  → {len(self.errors)} total error(s)")
+            if len(self.warnings) > 0:
+                print_warning(f"  → {len(self.warnings)} warning(s)")
+            print()
+            print_error("Failed validations:")
+            for validation in failed:
+                print(f"  ✗ {validation}")
+            return False
+        else:
+            print_success(f"✓ ALL VALIDATIONS PASSED")
+            if len(self.warnings) > 0:
+                print_info(f"Note: {len(self.warnings)} warning(s) found")
+            print_info(f"Application shell integrated successfully")
+            if self.auth_enabled:
+                print_info("Authentication context enabled and configured")
+            print_success("All imports validated against package.json")
+            return True
+        if not all_passed:
+            print_error(f"✗ VALIDATION FAILED")
+            print_error(f"  → {len(failed)} validation(s) failed")
+            print_error(f"  → {len(self.errors)} total error(s)")
+            if len(self.warnings) > 0:
+                print_warning(f"  → {len(self.warnings)} warning(s)")
+            print()
+            print_error("Failed validations:")
+            for validation in failed:
+                print(f"  ✗ {validation}")
             return False
         else:
             print_success(f"✓ ALL VALIDATIONS PASSED")

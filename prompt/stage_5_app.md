@@ -1,946 +1,561 @@
-#!/usr/bin/env python3
-"""
-Stage 5 Validator - Application Shell & Integration Validator
+You are elite frontend architect specializing in React, TypeScript, Vite, and application integration
 
-Validates that application shell is correctly integrated
+# Stage 5: Application Shell & Integration - Final Assembly
 
-CRITICAL VALIDATIONS:
-1. App.tsx with router integration
-2. main.tsx with React 18 API
-3. App.css with component styles
-4. index.css with CSS reset
-5. AuthContext (if auth enabled)
-6. Context barrel exports
-7. index.html template
-8. package.json dependencies
-9. Import validation
-10. TypeScript types
-11. No modifications to previous stages
-"""
+## Mission
 
-import sys
-import os
-import json
-import re
-from pathlib import Path
-from typing import Dict, List, Set, Optional, Tuple
+Generate complete application shell and integrate all previous layers:
+- Root App component with router
+- Application entry point
+- Global styles and CSS
+- Context providers (Auth, Theme)
+- HTML template
+- Package.json configuration
 
-class Colors:
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    YELLOW = '\033[93m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    RESET = '\033[0m'
+**IMPORTANT**: All entity components, infrastructure, and routing are already created. This stage only integrates them.
 
-def print_success(msg):
-    print(f"{Colors.GREEN}✓ {msg}{Colors.RESET}")
+---
 
-def print_error(msg):
-    print(f"{Colors.RED}✗ {msg}{Colors.RESET}")
+## Tools
 
-def print_warning(msg):
-    print(f"{Colors.YELLOW}⚠ {msg}{Colors.RESET}")
+- `builtin_run_terminal_command` - Run shell commands (USE THIS for all commands!)
+- `builtin_read_file` - Read file contents  
+- `builtin_edit_existing_file` - Edit existing files
+- `builtin_create_new_file` - Create new files
+- `builtin_ls` - List directory contents
 
-def print_info(msg):
-    print(f"{Colors.BLUE}ℹ {msg}{Colors.RESET}")
+**REMINDER**: Use `builtin_create_new_file` for ALL file creation
 
-def print_section(title):
-    print(f"\n{Colors.CYAN}{'='*70}")
-    print(f"  {title}")
-    print(f"{'='*70}{Colors.RESET}")
+**REMINDER**: Execute pipeline steps without asking permissions
 
-class Stage5Validator:
-    def __init__(self, erd_path: str, openapi_path: str):
-        self.erd_path = erd_path
-        self.openapi_path = openapi_path
-        self.errors = []
-        self.warnings = []
-        self.validation_results = {}
-        self.base_path = Path("generated_project")
-        
-        # Track exported symbols and imports
-        self.file_exports = {}
-        self.file_imports = {}
-        
-        # Track auth requirements
-        self.auth_enabled = False
-        
-        # Track installed packages
-        self.installed_packages = set()
-        
-    def load_inputs(self) -> bool:
-        """Load ERD and OpenAPI files"""
-        try:
-            with open(self.erd_path, 'r') as f:
-                self.erd_data = json.load(f)
-                business_logic = self.erd_data.get('business_logic', {})
-                authentication = business_logic.get('authentication', {})
-                self.auth_enabled = authentication.get('enabled', False)
-            
-            with open(self.openapi_path, 'r') as f:
-                self.openapi_data = json.load(f)
-            
-            return True
-        except Exception as e:
-            self.errors.append(f"Error loading inputs: {e}")
-            return False
-    
-    def validate_app_component(self):
-        """Validate App.tsx component"""
-        validation_name = "App Component"
-        app_file = self.base_path / "src" / "App.tsx"
-        
-        if not app_file.exists():
-            self.errors.append(f"{validation_name}: File not found - src/App.tsx")
-            self.validation_results[validation_name] = False
-            return
-        
-        file_errors = []
-        
-        try:
-            with open(app_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Check for React import
-            if not re.search(r"import.*React.*from\s+['\"]react['\"]", content):
-                file_errors.append("Missing React import")
-            
-            # Check for App component export
-            if not re.search(r"export\s+(const|function)\s+App", content):
-                file_errors.append("Missing App component export")
-            
-            # Check for AppRouter import
-            if not re.search(r"import.*AppRouter.*from.*router", content):
-                file_errors.append("Missing AppRouter import from router")
-            
-            # Check for App.css import
-            if not re.search(r"import\s+['\"]\.\/App\.css['\"]", content):
-                file_errors.append("Missing App.css import")
-            
-            # Check for AppRouter usage
-            if not re.search(r"<AppRouter\s*/?>", content):
-                file_errors.append("AppRouter component not used")
-            
-            # Check for AuthProvider if auth enabled
-            if self.auth_enabled:
-                if not re.search(r"import.*AuthProvider.*from", content):
-                    file_errors.append("Auth enabled but missing AuthProvider import")
-                
-                if not re.search(r"<AuthProvider>", content):
-                    file_errors.append("Auth enabled but AuthProvider not wrapping AppRouter")
-        
-        except Exception as e:
-            file_errors.append(f"Error reading file: {e}")
-        
-        if file_errors:
-            for error in file_errors:
-                self.errors.append(f"{validation_name}: {error}")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def validate_main_entry(self):
-        """Validate main.tsx entry point"""
-        validation_name = "Main Entry Point"
-        main_file = self.base_path / "src" / "main.tsx"
-        
-        if not main_file.exists():
-            self.errors.append(f"{validation_name}: File not found - src/main.tsx")
-            self.validation_results[validation_name] = False
-            return
-        
-        file_errors = []
-        
-        try:
-            with open(main_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Check for React import
-            if not re.search(r"import.*React.*from\s+['\"]react['\"]", content):
-                file_errors.append("Missing React import")
-            
-            # Check for ReactDOM import
-            if not re.search(r"import.*ReactDOM.*from\s+['\"]react-dom/client['\"]", content):
-                file_errors.append("Missing ReactDOM import from 'react-dom/client'")
-            
-            # Check for App import
-            if not re.search(r"import.*App.*from.*App", content):
-                file_errors.append("Missing App component import")
-            
-            # Check for index.css import
-            if not re.search(r"import\s+['\"]\.\/index\.css['\"]", content):
-                file_errors.append("Missing index.css import")
-            
-            # Check for React 18 createRoot API
-            if not re.search(r"ReactDOM\.createRoot", content):
-                file_errors.append("Not using React 18 createRoot API")
-            
-            # Check for StrictMode
-            if not re.search(r"<React\.StrictMode>", content):
-                self.warnings.append(f"{validation_name}: Should wrap App in React.StrictMode")
-            
-            # Check for root element
-            if not re.search(r"getElementById\(['\"]root['\"]", content):
-                file_errors.append("Missing root element selection")
-        
-        except Exception as e:
-            file_errors.append(f"Error reading file: {e}")
-        
-        if file_errors:
-            for error in file_errors:
-                self.errors.append(f"{validation_name}: {error}")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def validate_app_css(self):
-        """Validate App.css styles"""
-        validation_name = "App.css Styles"
-        css_file = self.base_path / "src" / "App.css"
-        
-        if not css_file.exists():
-            self.errors.append(f"{validation_name}: File not found - src/App.css")
-            self.validation_results[validation_name] = False
-            return
-        
-        file_errors = []
-        
-        try:
-            with open(css_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Check for essential component styles
-            required_selectors = [
-                '.app',
-                '.layout',
-                '.navbar',
-                'button'
-            ]
-            
-            for selector in required_selectors:
-                if not re.search(rf"{re.escape(selector)}\s*\{{", content):
-                    file_errors.append(f"Missing styles for '{selector}'")
-        
-        except Exception as e:
-            file_errors.append(f"Error reading file: {e}")
-        
-        if file_errors:
-            for error in file_errors:
-                self.errors.append(f"{validation_name}: {error}")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def validate_index_css(self):
-        """Validate index.css reset"""
-        validation_name = "index.css Reset"
-        css_file = self.base_path / "src" / "index.css"
-        
-        if not css_file.exists():
-            self.errors.append(f"{validation_name}: File not found - src/index.css")
-            self.validation_results[validation_name] = False
-            return
-        
-        file_errors = []
-        
-        try:
-            with open(css_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Check for CSS reset patterns
-            if not re.search(r"box-sizing\s*:\s*border-box", content):
-                file_errors.append("Missing box-sizing reset")
-            
-            if not re.search(r"body\s*\{", content):
-                file_errors.append("Missing body styles")
-            
-            # Check for root or html styles
-            if not re.search(r"(:root|html)\s*\{", content):
-                self.warnings.append(f"{validation_name}: Should include :root or html styles")
-        
-        except Exception as e:
-            file_errors.append(f"Error reading file: {e}")
-        
-        if file_errors:
-            for error in file_errors:
-                self.errors.append(f"{validation_name}: {error}")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def validate_auth_context(self):
-        """Validate AuthContext (if auth enabled)"""
-        validation_name = "Auth Context"
-        auth_file = self.base_path / "src" / "context" / "AuthContext.tsx"
-        
-        if not self.auth_enabled:
-            self.validation_results[validation_name] = True
-            return
-        
-        if not auth_file.exists():
-            self.errors.append(f"{validation_name}: File not found - src/context/AuthContext.tsx (auth is enabled)")
-            self.validation_results[validation_name] = False
-            return
-        
-        file_errors = []
-        
-        try:
-            with open(auth_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Check for React imports
-            if not re.search(r"import.*createContext.*from\s+['\"]react['\"]", content):
-                file_errors.append("Missing createContext import from React")
-            
-            if not re.search(r"import.*useContext.*from\s+['\"]react['\"]", content):
-                file_errors.append("Missing useContext import from React")
-            
-            # Check for AuthContext creation
-            if not re.search(r"const\s+AuthContext\s*=\s*createContext", content):
-                file_errors.append("Missing AuthContext creation with createContext")
-            
-            # Check for AuthProvider export
-            if not re.search(r"export\s+(const|function)\s+AuthProvider", content):
-                file_errors.append("Missing AuthProvider export")
-            
-            # Check for useAuth hook export
-            if not re.search(r"export\s+(const|function)\s+useAuth", content):
-                file_errors.append("Missing useAuth hook export")
-            
-            # Check for auth methods
-            required_methods = ['login', 'logout']
-            for method in required_methods:
-                if not re.search(rf"{method}\s*[:=]", content):
-                    file_errors.append(f"Missing {method} method")
-        
-        except Exception as e:
-            file_errors.append(f"Error reading file: {e}")
-        
-        if file_errors:
-            for error in file_errors:
-                self.errors.append(f"{validation_name}: {error}")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def validate_context_barrel_exports(self):
-        """Validate context barrel exports"""
-        validation_name = "Context Barrel Exports"
-        
-        # Only required if contexts exist
-        context_dir = self.base_path / "src" / "context"
-        if not context_dir.exists() or not self.auth_enabled:
-            self.validation_results[validation_name] = True
-            return
-        
-        context_index = context_dir / "index.ts"
-        
-        if not context_index.exists():
-            self.errors.append(f"{validation_name}: File not found - src/context/index.ts")
-            self.validation_results[validation_name] = False
-            return
-        
-        file_errors = []
-        
-        try:
-            with open(context_index, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Check for AuthContext export
-            if self.auth_enabled:
-                if not re.search(r"export\s+\*\s+from\s+['\"]\.\/AuthContext['\"]", content):
-                    file_errors.append("Missing export for AuthContext")
-        
-        except Exception as e:
-            file_errors.append(f"Error reading file: {e}")
-        
-        if file_errors:
-            for error in file_errors:
-                self.errors.append(f"{validation_name}: {error}")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def validate_html_template(self):
-        """Validate index.html template"""
-        validation_name = "HTML Template"
-        html_file = self.base_path / "index.html"
-        
-        if not html_file.exists():
-            self.errors.append(f"{validation_name}: File not found - index.html")
-            self.validation_results[validation_name] = False
-            return
-        
-        file_errors = []
-        
-        try:
-            with open(html_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Check for DOCTYPE
-            if not re.search(r"<!DOCTYPE html>", content, re.IGNORECASE):
-                file_errors.append("Missing DOCTYPE declaration")
-            
-            # Check for charset meta tag
-            if not re.search(r'<meta\s+charset=["\']UTF-8["\']', content, re.IGNORECASE):
-                file_errors.append("Missing charset meta tag")
-            
-            # Check for viewport meta tag
-            if not re.search(r'<meta\s+name=["\']viewport["\']', content, re.IGNORECASE):
-                file_errors.append("Missing viewport meta tag")
-            
-            # Check for root div
-            if not re.search(r'<div\s+id=["\']root["\']', content):
-                file_errors.append("Missing root div element")
-            
-            # Check for script tag
-            if not re.search(r'<script.*src=["\'].*main\.tsx["\']', content):
-                file_errors.append("Missing script tag for main.tsx")
-        
-        except Exception as e:
-            file_errors.append(f"Error reading file: {e}")
-        
-        if file_errors:
-            for error in file_errors:
-                self.errors.append(f"{validation_name}: {error}")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def validate_package_json(self):
-        """Validate package.json dependencies"""
-        validation_name = "Package.json Dependencies"
-        package_file = self.base_path / "package.json"
-        
-        if not package_file.exists():
-            self.errors.append(f"{validation_name}: File not found - package.json")
-            self.validation_results[validation_name] = False
-            return
-        
-        file_errors = []
-        
-        try:
-            with open(package_file, 'r', encoding='utf-8') as f:
-                package_data = json.load(f)
-            
-            dependencies = package_data.get('dependencies', {})
-            dev_dependencies = package_data.get('devDependencies', {})
-            all_deps = {**dependencies, **dev_dependencies}
-            
-            # Store for later import validation
-            self.installed_packages = set(all_deps.keys())
-            
-            # Check required dependencies
-            required_deps = [
-                'react',
-                'react-dom',
-                'react-router-dom',
-                'axios'
-            ]
-            
-            for dep in required_deps:
-                if dep not in all_deps:
-                    file_errors.append(f"Missing required dependency: {dep}")
-            
-            # Check required dev dependencies
-            required_dev_deps = [
-                '@types/react',
-                '@types/react-dom',
-                '@vitejs/plugin-react',
-                'typescript',
-                'vite'
-            ]
-            
-            for dep in required_dev_deps:
-                if dep not in all_deps:
-                    file_errors.append(f"Missing required dev dependency: {dep}")
-            
-            # Check scripts
-            scripts = package_data.get('scripts', {})
-            required_scripts = ['dev', 'build']
-            
-            for script in required_scripts:
-                if script not in scripts:
-                    file_errors.append(f"Missing script: {script}")
-        
-        except json.JSONDecodeError as e:
-            file_errors.append(f"Invalid JSON: {e}")
-        except Exception as e:
-            file_errors.append(f"Error reading file: {e}")
-        
-        if file_errors:
-            for error in file_errors:
-                self.errors.append(f"{validation_name}: {error}")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def validate_no_previous_modifications(self):
-        """Validate no modifications to previous stage files"""
-        validation_name = "No Previous Stage Modifications"
-        
-        # This is a soft check - we validate that key files still exist and have expected structure
-        # We can't fully guarantee no modifications without comparing to baseline
-        
-        critical_files = [
-            "src/router/index.tsx",
-            "src/router/routes.ts",
-            "src/components/Layout.tsx",
-            "src/components/Navbar.tsx",
-            "src/services/api.ts"
-        ]
-        
-        file_errors = []
-        
-        for file_path in critical_files:
-            full_path = self.base_path / file_path
-            if not full_path.exists():
-                file_errors.append(f"Critical file missing or moved: {file_path}")
-        
-        if file_errors:
-            for error in file_errors:
-                self.errors.append(f"{validation_name}: {error}")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def _scan_file_exports(self, file_path: Path) -> Set[str]:
-        """Scan a TypeScript file for exported symbols"""
-        exports = set()
-        
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            named_exports = re.findall(r'export\s+(?:interface|type|const|let|var|function|class)\s+(\w+)', content)
-            exports.update(named_exports)
-            
-            export_declarations = re.findall(r'export\s*\{\s*([^}]+)\s*\}', content)
-            for decl in export_declarations:
-                symbols = [s.strip().split(' as ')[0].strip() for s in decl.split(',')]
-                exports.update(symbols)
-            
-            if re.search(r'export\s+\*\s+from', content):
-                exports.add('*')
-            
-            if re.search(r'export\s+default', content):
-                exports.add('default')
-        
-        except Exception as e:
-            pass
-        
-        return exports
-    
-    def _scan_file_imports(self, file_path: Path) -> List[Tuple[List[str], str]]:
-        """Scan a TypeScript file for imports"""
-        imports = []
-        
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            named_imports = re.finditer(r"import\s*\{\s*([^}]+)\s*\}\s*from\s*['\"]([^'\"]+)['\"]", content)
-            for match in named_imports:
-                symbols_str = match.group(1)
-                from_path = match.group(2)
-                symbols = [s.strip().split(' as ')[0].strip() for s in symbols_str.split(',')]
-                imports.append((symbols, from_path))
-            
-            default_imports = re.finditer(r"import\s+(\w+)\s+from\s+['\"]([^'\"]+)['\"]", content)
-            for match in default_imports:
-                symbol = match.group(1)
-                from_path = match.group(2)
-                imports.append(([symbol], from_path))
-            
-            wildcard_imports = re.finditer(r"import\s+\*\s+as\s+(\w+)\s+from\s+['\"]([^'\"]+)['\"]", content)
-            for match in wildcard_imports:
-                symbol = match.group(1)
-                from_path = match.group(2)
-                imports.append(([symbol], from_path))
-        
-        except Exception as e:
-            pass
-        
-        return imports
-    
-    def _resolve_import_path(self, importing_file: Path, import_path: str) -> Optional[Path]:
-        """Resolve relative import path to absolute file path"""
-        if import_path.startswith('.'):
-            base_dir = importing_file.parent
-            resolved = (base_dir / import_path).resolve()
-            
-            for ext in ['.ts', '.tsx', '.js', '.jsx', '.css', '']:
-                if ext == '':
-                    index_path = resolved / 'index.ts'
-                    if index_path.exists():
-                        return index_path
-                    index_path = resolved / 'index.tsx'
-                    if index_path.exists():
-                        return index_path
-                else:
-                    file_with_ext = Path(str(resolved) + ext)
-                    if file_with_ext.exists():
-                        return file_with_ext
-        
-        return None
-    
-    def validate_imports(self):
-        """Validate all imports are valid"""
-        validation_name = "Import Validation"
-        src_path = self.base_path / "src"
-        
-        if not src_path.exists():
-            self.validation_results[validation_name] = True
-            return
-        
-        # Build export map for internal files
-        for root, dirs, files in os.walk(src_path):
-            dirs[:] = [d for d in dirs if d != 'node_modules']
-            
-            for file in files:
-                if not (file.endswith('.ts') or file.endswith('.tsx')):
-                    continue
-                
-                file_path = Path(root) / file
-                exports = self._scan_file_exports(file_path)
-                self.file_exports[file_path] = exports
-        
-        # Collect all external package imports
-        external_imports = set()
-        
-        # Validate imports
-        import_errors = []
-        
-        for root, dirs, files in os.walk(src_path):
-            dirs[:] = [d for d in dirs if d != 'node_modules']
-            
-            for file in files:
-                if not (file.endswith('.ts') or file.endswith('.tsx')):
-                    continue
-                
-                file_path = Path(root) / file
-                rel_path = str(file_path.relative_to(self.base_path))
-                imports = self._scan_file_imports(file_path)
-                
-                for symbols, from_path in imports:
-                    # Handle relative imports (internal)
-                    if from_path.startswith('.'):
-                        # Skip CSS imports
-                        if from_path.endswith('.css'):
-                            continue
-                        
-                        resolved_path = self._resolve_import_path(file_path, from_path)
-                        
-                        if resolved_path is None:
-                            import_errors.append(f"{rel_path}: Import path not found '{from_path}'")
-                            continue
-                        
-                        # Skip CSS files
-                        if str(resolved_path).endswith('.css'):
-                            continue
-                        
-                        if resolved_path not in self.file_exports:
-                            continue
-                        
-                        available_exports = self.file_exports[resolved_path]
-                        
-                        if '*' in available_exports:
-                            continue
-                        
-                        for symbol in symbols:
-                            if symbol not in available_exports and 'default' not in available_exports:
-                                import_errors.append(f"{rel_path}: Symbol '{symbol}' not exported from '{from_path}'")
-                    
-                    # Handle external package imports
-                    else:
-                        # Extract base package name
-                        package_name = self._extract_package_name(from_path)
-                        if package_name:
-                            external_imports.add(package_name)
-        
-        # Validate external imports against package.json
-        if hasattr(self, 'installed_packages'):
-            for package in external_imports:
-                if package not in self.installed_packages:
-                    import_errors.append(f"Package '{package}' is imported but not in package.json dependencies")
-        
-        if import_errors:
-            for error in import_errors:
-                self.errors.append(f"{validation_name}: {error}")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def _extract_package_name(self, import_path: str) -> Optional[str]:
-        """Extract package name from import path"""
-        # Handle scoped packages like @vitejs/plugin-react
-        if import_path.startswith('@'):
-            parts = import_path.split('/')
-            if len(parts) >= 2:
-                return f"{parts[0]}/{parts[1]}"
-            return parts[0]
-        
-        # Handle regular packages like react, react-dom/client
-        parts = import_path.split('/')
-        return parts[0] if parts else None
-    
-    def validate_route_view_matching(self):
-        """Validate that all views have corresponding routes defined"""
-        validation_name = "Route-View Matching"
-        
-        views_path = self.base_path / "src" / "views"
-        routes_file = self.base_path / "src" / "router" / "routes.ts"
-        router_file = self.base_path / "src" / "router" / "index.tsx"
-        
-        if not views_path.exists():
-            self.validation_results[validation_name] = True
-            return
-        
-        if not routes_file.exists():
-            self.errors.append(f"{validation_name}: routes.ts not found")
-            self.validation_results[validation_name] = False
-            return
-        
-        if not router_file.exists():
-            self.errors.append(f"{validation_name}: router/index.tsx not found")
-            self.validation_results[validation_name] = False
-            return
-        
-        file_errors = []
-        
-        try:
-            # Get all view files
-            view_files = []
-            for view_file in views_path.glob("*.tsx"):
-                view_name = view_file.stem
-                # Skip Home and NotFound as they have special routes
-                if view_name not in ['Home', 'NotFound']:
-                    view_files.append(view_name)
-            
-            # Read routes.ts
-            with open(routes_file, 'r', encoding='utf-8') as f:
-                routes_content = f.read()
-            
-            # Read router/index.tsx
-            with open(router_file, 'r', encoding='utf-8') as f:
-                router_content = f.read()
-            
-            # Check each view has a route definition
-            for view_name in view_files:
-                # Check in routes.ts (e.g., USER: '/user' for UserView)
-                entity_name = view_name.replace('View', '')
-                route_constant = entity_name.upper()
-                
-                if not re.search(rf"{route_constant}\s*:", routes_content):
-                    file_errors.append(f"View '{view_name}' missing route constant in routes.ts")
-                
-                # Check view is imported in router/index.tsx
-                if not re.search(rf"import.*{view_name}.*from.*views", router_content):
-                    file_errors.append(f"View '{view_name}' not imported in router/index.tsx")
-                
-                # Check view is used in a Route component
-                if not re.search(rf"<Route.*element=\{{<{view_name}", router_content):
-                    file_errors.append(f"View '{view_name}' not used in any Route in router/index.tsx")
-        
-        except Exception as e:
-            file_errors.append(f"Error validating routes: {e}")
-        
-        if file_errors:
-            for error in file_errors:
-                self.errors.append(f"{validation_name}: {error}")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def validate_html_location(self):
-        """Validate that index.html is in project root"""
-        validation_name = "HTML Template Location"
-        
-        # Check in project root (generated_project/)
-        root_html = self.base_path / "index.html"
-        
-        if not root_html.exists():
-            self.errors.append(f"{validation_name}: index.html not found in project root (generated_project/)")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def validate_storage_exports(self):
-        """Validate that tokenStorage is exported from storage.ts"""
-        validation_name = "Storage Exports"
-        storage_file = self.base_path / "src" / "utils" / "storage.ts"
-        
-        if not storage_file.exists():
-            self.validation_results[validation_name] = True
-            return
-        
-        file_errors = []
-        
-        try:
-            with open(storage_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Check if tokenStorage is exported
-            if not re.search(r"export.*tokenStorage", content):
-                file_errors.append("tokenStorage not exported from storage.ts")
-        
-        except Exception as e:
-            file_errors.append(f"Error reading storage.ts: {e}")
-        
-        if file_errors:
-            for error in file_errors:
-                self.errors.append(f"{validation_name}: {error}")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def validate_component_barrel_exports(self):
-        """Validate that entity components are exported from components/index.ts"""
-        validation_name = "Component Barrel Exports"
-        components_index = self.base_path / "src" / "components" / "index.ts"
-        components_dir = self.base_path / "src" / "components"
-        
-        if not components_dir.exists() or not components_index.exists():
-            self.validation_results[validation_name] = True
-            return
-        
-        file_errors = []
-        
-        try:
-            # Find all component files
-            component_files = []
-            for component_file in components_dir.glob("*.tsx"):
-                component_name = component_file.stem
-                # Skip Layout, Navbar, Sidebar
-                if component_name not in ['Layout', 'Navbar', 'Sidebar']:
-                    component_files.append(component_name)
-            
-            # Read barrel export file
-            with open(components_index, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Check each component is exported
-            for component_name in component_files:
-                if not re.search(rf"export.*{component_name}", content):
-                    file_errors.append(f"Component '{component_name}' not exported from components/index.ts")
-        
-        except Exception as e:
-            file_errors.append(f"Error validating component exports: {e}")
-        
-        if file_errors:
-            for error in file_errors:
-                self.errors.append(f"{validation_name}: {error}")
-            self.validation_results[validation_name] = False
-        else:
-            self.validation_results[validation_name] = True
-    
-    def validate(self) -> bool:
-        """Run all validations"""
-        if not self.load_inputs():
-            return False
-        
-        # Run all validations silently
-        self.validate_app_component()
-        self.validate_main_entry()
-        self.validate_app_css()
-        self.validate_index_css()
-        self.validate_auth_context()
-        self.validate_context_barrel_exports()
-        self.validate_html_template()
-        self.validate_html_location()  # NEW: Check index.html is in project root
-        self.validate_package_json()  # Must run before validate_imports
-        self.validate_no_previous_modifications()
-        self.validate_route_view_matching()  # NEW: Check views match routes
-        self.validate_storage_exports()  # NEW: Check tokenStorage export
-        self.validate_component_barrel_exports()  # NEW: Check entity components exported
-        self.validate_imports()
-        
-        # Print summary
-        print_section("VALIDATION SUMMARY")
-        
-        passed = []
-        failed = []
-        
-        for validation, result in self.validation_results.items():
-            if result:
-                passed.append(validation)
-            else:
-                failed.append(validation)
-        
-        # Print passed validations
-        for validation in passed:
-            print_success(f"{validation}: PASSED")
-        
-        # Print failed validations
-        for validation in failed:
-            print_error(f"{validation}: FAILED")
-        
-        # Print detailed errors if any exist
-        if self.errors:
-            print_section("ERROR DETAILS")
-            for i, error in enumerate(self.errors, 1):
-                print_error(f"{i}. {error}")
-        
-        # Print warnings if any exist
-        if self.warnings:
-            print(f"\n{Colors.YELLOW}WARNINGS:{Colors.RESET}")
-            for i, warning in enumerate(self.warnings, 1):
-                print_warning(f"{i}. {warning}")
-        
-        # Print validation statistics
-        print_section("VALIDATION STATISTICS")
-        
-        # Count files scanned
-        src_path = self.base_path / "src"
-        ts_files = []
-        if src_path.exists():
-            for root, dirs, files in os.walk(src_path):
-                dirs[:] = [d for d in dirs if d != 'node_modules']
-                for file in files:
-                    if file.endswith('.ts') or file.endswith('.tsx'):
-                        ts_files.append(Path(root) / file)
-        
-        print_info(f"TypeScript files scanned: {len(ts_files)}")
-        print_info(f"Files with exports validated: {len(self.file_exports)}")
-        print_info(f"External packages detected: {len(self.installed_packages)}")
-        
-        # Final result
-        print()
-        if len(self.errors) > 0:
-            print_error(f"VALIDATION FAILED: {len(self.errors)} error(s), {len(self.warnings)} warning(s)")
-            return False
-        else:
-            print_success(f"✓ ALL VALIDATIONS PASSED")
-            if len(self.warnings) > 0:
-                print_info(f"Note: {len(self.warnings)} warning(s) found")
-            print_info(f"Application shell integrated successfully")
-            if self.auth_enabled:
-                print_info("Authentication context enabled and configured")
-            print_success("All imports validated against package.json")
-            return True
+---
 
-def main():
-    if len(sys.argv) != 3:
-        print_error("Usage: python3 stage_5_validator.py <erd.json> <openapi.json>")
-        print_info("Example: python3 validators/stage_5_validator.py output/erd.json output/openapi.json")
-        sys.exit(1)
-    
-    erd_path = sys.argv[1]
-    openapi_path = sys.argv[2]
-    
-    if not os.path.exists(erd_path):
-        print_error(f"ERD file not found: {erd_path}")
-        sys.exit(1)
-    
-    if not os.path.exists(openapi_path):
-        print_error(f"OpenAPI file not found: {openapi_path}")
-        sys.exit(1)
-    
-    validator = Stage5Validator(erd_path, openapi_path)
-    success = validator.validate()
-    
-    sys.exit(0 if success else 1)
+## Execution Workflow
 
-if __name__ == "__main__":
-    main()
+### Step 1: Read Inputs
+
+```bash
+builtin_read_file: output/erd.json
+builtin_read_file: output/openapi.json
+builtin_run_terminal_command: ls generated_project/src/
+builtin_run_terminal_command: cat generated_project/package.json
+```
+
+**Extract:**
+- Authentication settings from erd.json business_logic.authentication
+- Application name from erd.json project_info.name
+- Existing router from src/router/
+- Existing components and views
+- Current dependencies from package.json
+
+---
+
+### Step 2: Generate App Component
+
+**Create:** `src/App.tsx`
+
+**Requirements:**
+1. Import AppRouter from router
+2. Import AuthContext provider (if auth enabled)
+3. Import ThemeContext provider (if theming enabled)
+4. Wrap router with context providers
+5. Apply global className
+6. Import App.css
+
+**Pattern (No Auth):**
+```typescript
+import React from 'react';
+import { AppRouter } from './router';
+import './App.css';
+
+export const App: React.FC = () => {
+  return (
+    <div className="app">
+      <AppRouter />
+    </div>
+  );
+};
+```
+
+**Pattern (With Auth):**
+```typescript
+import React from 'react';
+import { AppRouter } from './router';
+import { AuthProvider } from './context/AuthContext';
+import './App.css';
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <div className="app">
+        <AppRouter />
+      </div>
+    </AuthProvider>
+  );
+};
+```
+
+**Generation Logic:**
+- If erd.json business_logic.authentication.enabled = true → Include AuthProvider
+- Wrap AppRouter with providers (outermost to innermost: Auth, Theme, Router)
+
+---
+
+### Step 3: Generate Main Entry Point
+
+**Create:** `src/main.tsx`
+
+**Requirements:**
+1. Import React and ReactDOM
+2. Import App component
+3. Import index.css
+4. Render App to root element
+5. Use React 18 createRoot API
+6. Include StrictMode
+
+**Pattern:**
+```typescript
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { App } from './App';
+import './index.css';
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+```
+
+---
+
+### Step 4: Generate Global Application Styles
+
+**Create:** `src/App.css`
+
+**Requirements:**
+1. App container styles (full viewport height, flex layout)
+2. Layout utilities (.layout, .main-content with padding)
+3. Navbar styles (horizontal bar, brand, links, hover effects)
+4. Sidebar styles (vertical navigation, 250px width, active state)
+5. View header styles (flex with space-between)
+6. Table styles (full width, borders, header background)
+7. Form styles (.form-group with labels and inputs, focus states)
+8. Button styles (primary button with hover, disabled state)
+9. Error and loading states (colored backgrounds, borders)
+10. Professional spacing and color scheme
+
+**Color Scheme:**
+- Primary: #007bff
+- Background: #f5f5f5
+- Text: #333
+- Border: #e0e0e0
+- Error: #dc3545
+
+**Design Principles:**
+- Clean and minimal aesthetic
+- Consistent spacing (use rem units)
+- Smooth transitions (0.3s)
+- Responsive and accessible
+- Box shadows for depth
+
+---
+
+### Step 5: Generate Base CSS Reset
+
+**Create:** `src/index.css`
+
+**Requirements:**
+1. CSS reset (box-sizing: border-box for all elements)
+2. Remove default margin and padding from all elements
+3. Root font settings (system fonts, optimized rendering)
+4. Body styles (full viewport height, minimum width)
+5. Typography hierarchy (h1, h2, h3, p with proper sizing)
+6. Link styles (colors, hover states)
+7. Font smoothing for better rendering
+
+**Typography Scale:**
+- h1: 2.5rem
+- h2: 2rem
+- h3: 1.5rem
+- Body: 1rem with 1.5 line-height
+
+**Design Principles:**
+- Modern system font stack
+- Consistent line heights
+- Optimized text rendering
+- Accessible contrast ratios
+
+---
+
+### Step 6: Generate AuthContext (Conditional)
+
+**Create:** `src/context/AuthContext.tsx` (only if auth enabled)
+
+**Requirements:**
+1. Create AuthContext with user state
+2. Provide login, logout, register methods
+3. Use tokenStorage from utils
+4. Export AuthProvider and useAuth hook
+5. Store token on login, clear on logout
+
+**Pattern:**
+```typescript
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { tokenStorage } from '../utils/storage';
+
+interface User {
+  id: number;
+  email: string;
+  // Add other user fields from erd.json
+}
+
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  register: (email: string, password: string) => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Check for existing token on mount
+    const token = tokenStorage.getAuthToken();
+    if (token) {
+      // TODO: Validate token and fetch user data
+      // For now, just set a placeholder
+    }
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    try {
+      // TODO: Call login API
+      // const response = await authService.login(email, password);
+      // tokenStorage.setAuthToken(response.token);
+      // setUser(response.user);
+      console.log('Login called with:', email);
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
+  };
+
+  const logout = () => {
+    tokenStorage.removeAuthToken();
+    setUser(null);
+  };
+
+  const register = async (email: string, password: string) => {
+    try {
+      // TODO: Call register API
+      console.log('Register called with:', email);
+    } catch (error) {
+      console.error('Registration failed:', error);
+      throw error;
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        login,
+        logout,
+        register,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
+};
+```
+
+**Generation Logic:**
+- Check erd.json business_logic.authentication.enabled
+- If true, create AuthContext with login/logout/register
+- Extract user fields from authentication.login_fields
+
+---
+
+### Step 7: Generate HTML Template
+
+**Create:** `index.html` (if not exists)
+
+**Requirements:**
+1. HTML5 doctype
+2. Meta tags (charset, viewport)
+3. Title from erd.json project_info.name
+4. Root div element
+5. Module script tag for main.tsx
+
+**Pattern:**
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Application Name</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+```
+
+---
+
+### Step 8: Update Package.json
+
+**Read existing:** `package.json`
+
+**Requirements:**
+1. Verify required dependencies exist
+2. Add missing dependencies
+3. Update scripts (dev, build, preview)
+4. Set correct module type
+
+**Required Dependencies:**
+```json
+{
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.0",
+    "axios": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.0"
+  }
+}
+```
+
+**Scripts:**
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  }
+}
+```
+
+**Update file:**
+```
+builtin_edit_existing_file: generated_project/package.json
+```
+
+---
+
+### Step 9: Verify Backend Connection
+
+**Read:** `.env`, `openapi.json`, service files
+
+**Requirements:**
+1. Verify `.env` exists with `VITE_API_BASE_URL`
+2. Extract backend URL from openapi.json (servers[0].url or url or host)
+3. Update `.env` if URL differs from openapi.json
+4. Verify service endpoints match openapi.json paths exactly
+
+**Commands:**
+```bash
+builtin_read_file: generated_project/.env
+builtin_read_file: output/openapi.json
+builtin_run_terminal_command: ls generated_project/src/services/
+```
+
+**Critical Path Matching Logic:**
+```
+1. Extract openapi_url from openapi.json (servers[0].url or url field)
+2. Extract all paths from openapi.json.paths (e.g., /api/users, /api/auth/login)
+3. Determine common prefix:
+   - If all paths start with /api → prefix = "/api"
+   - Otherwise → prefix = ""
+4. For each *.service.ts file:
+   - Find all api.get/post/put/delete calls
+   - Extract endpoint paths
+   - Verify endpoint matches openapi.json paths
+   - If mismatch → FIX the service file
+
+Example Fix Needed:
+  OpenAPI has: /api/users
+  Service calls: api.get('/users')
+  Fix: Change to api.get('/api/users')
+```
+
+**Update Steps:**
+1. Update `.env` if URL differs:
+```bash
+builtin_edit_existing_file: generated_project/.env
+# Set VITE_API_BASE_URL={openapi_url}
+```
+
+2. Check and fix each service file:
+```bash
+builtin_read_file: generated_project/src/services/user.service.ts
+# If calling wrong paths → builtin_edit_existing_file to fix
+```
+
+**Service Path Rules:**
+- Service endpoints MUST match openapi.json paths exactly
+- If OpenAPI paths include /api prefix → services must use /api prefix
+- baseURL from .env + service endpoint = full OpenAPI path
+- No hardcoded URLs allowed
+
+**Example Correct Patterns:**
+```typescript
+// OpenAPI: /api/users
+// .env: VITE_API_BASE_URL=http://localhost:3000
+// Service: api.get('/api/users') ✓
+
+// OpenAPI: /users  
+// .env: VITE_API_BASE_URL=http://localhost:3000/api
+// Service: api.get('/users') ✓
+```
+
+**Validation Checklist:**
+- [ ] .env VITE_API_BASE_URL matches openapi.json server
+- [ ] All service endpoints exist in openapi.json paths
+- [ ] No hardcoded http:// or https:// URLs in services
+- [ ] Services import and use api client (not axios directly)
+
+---
+
+### Step 10: Create Context Barrel Export
+
+**Create:** `src/context/index.ts` (if contexts created)
+
+```typescript
+export * from './AuthContext';
+// export * from './ThemeContext'; // if created
+```
+
+---
+
+### Step 11: Validation
+
+```bash
+builtin_run_terminal_command: python3 validators/stage_5_validator.py output/erd.json output/openapi.json
+```
+
+**If fails**: Fix files and re-validate
+
+---
+
+## Critical Rules
+
+**REMINDER**: Follow these rules strictly
+
+1. **DO NOT modify** entity components, views, router, or infrastructure
+2. **App.tsx integrates** existing router with providers
+3. **main.tsx** uses React 18 createRoot API
+4. **AuthContext conditional** = Only create if auth enabled in erd.json
+5. **Context providers** = Wrap in correct order (Auth → Theme → Router)
+6. **Package.json** = Update, don't replace
+7. **API paths MUST match** openapi.json exactly - verify and fix if needed
+7. **HTML template** = Create only if missing
+8. **TypeScript types** = All components properly typed
+9. **ES6 imports** = Use import/export statements
+10. **Validation required** = Must pass before completion
+
+---
+
+## File Organization
+
+**Entry Flow:**
+```
+index.html
+  → main.tsx
+    → App.tsx
+      → AuthProvider (if auth enabled)
+        → AppRouter
+          → Layout
+            → Routes
+              → Views
+                → Components
+```
+
+---
+
+## Context Provider Order
+
+**If multiple contexts:**
+```typescript
+<AuthProvider>
+  <ThemeProvider>
+    <AppRouter />
+  </ThemeProvider>
+</AuthProvider>
+```
+
+**Rule:** Outermost = least dependent, Innermost = most dependent
+
+---
+
+## Quality Checklist
+
+- [ ] App.tsx created and integrates router
+- [ ] main.tsx created with React 18 API
+- [ ] App.css created with component styles
+- [ ] index.css created with CSS reset
+- [ ] AuthContext created (if auth enabled)
+- [ ] Context barrel export created (if contexts exist)
+- [ ] index.html created (if missing)
+- [ ] package.json updated with dependencies
+- [ ] Backend URL verified and .env matches openapi.json
+- [ ] Service API paths verified and match openapi.json paths
+- [ ] All imports resolve correctly
+- [ ] TypeScript types complete
+- [ ] No modifications to previous stages
+- [ ] Validation passes
+
+---
+
+## Agent Mode
+
+**Execute**: read inputs → check auth requirements → generate App.tsx → generate main.tsx → generate App.css → generate index.css → generate AuthContext (conditional) → generate index.html (if missing) → update package.json → verify backend connection → create context barrel exports → validate → fix if needed → complete
+
+**REMINDER**: Use `builtin_create_new_file` for file creation
+
+**REMINDER**: Use `builtin_edit_existing_file` for package.json and service files
+
+**REMINDER**: Verify and fix service API paths to match openapi.json
+
+---
+
+## SUCCESS CRITERIA
+
+* Validation passes
+* App.tsx integrates router with providers
+* main.tsx uses React 18 createRoot
+* Global styles applied
+* AuthContext functional (if enabled)
+* Package.json has all dependencies
+* Backend URL in .env matches openapi.json server
+* Service API paths match openapi.json paths exactly
+* HTML template exists
+* All imports resolve
+* TypeScript compliant
+* Application runs with `npm run dev`
+* No modifications to previous stage files
