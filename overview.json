@@ -1,6 +1,6 @@
 {
   "rootFolder": "/home/andrewf/Desktop/DevPulse_/frontend_react",
-  "analyzedAt": "2025-12-03T11:35:47.962Z",
+  "analyzedAt": "2025-12-04T09:47:02.536Z",
   "rootStructure": [
     {
       "name": "generated_project",
@@ -17,14 +17,8 @@
     {
       "name": "overview.json",
       "type": "file",
-      "size": 3614,
-      "lines": 177
-    },
-    {
-      "name": "package-lock.json",
-      "type": "file",
-      "size": 93,
-      "lines": 7
+      "size": 8047,
+      "lines": 334
     },
     {
       "name": "prompt",
@@ -33,13 +27,17 @@
     {
       "name": "validators",
       "type": "dir"
+    },
+    {
+      "name": "working",
+      "type": "dir"
     }
   ],
   "rootFileSnippets": {
     "overview.json": [
       "{",
       "\"rootFolder\": \"/home/andrewf/Desktop/DevPulse_/frontend_react\",",
-      "\"analyzedAt\": \"2025-12-01T16:29:56.998Z\",",
+      "\"analyzedAt\": \"2025-12-03T11:35:47.962Z\",",
       "\"rootStructure\": [",
       "{",
       "\"name\": \"generated_project\",",
@@ -47,23 +45,9 @@
       "},",
       "{",
       "\"name\": \"input\","
-    ],
-    "package-lock.json": [
-      "{",
-      "\"name\": \"frontend_react\",",
-      "\"lockfileVersion\": 3,",
-      "\"requires\": true,",
-      "\"packages\": {}",
-      "}",
-      ""
     ]
   },
   "importantFolders": [
-    {
-      "path": "generated_project/public",
-      "category": "assets",
-      "fileCount": 0
-    },
     {
       "path": "generated_project/src/components",
       "category": "frontend",
@@ -86,30 +70,53 @@
       "path": "output",
       "category": "build",
       "fileCount": 1
+    },
+    {
+      "path": "working/generated_project/public",
+      "category": "assets",
+      "fileCount": 0
+    },
+    {
+      "path": "working/generated_project/src/components",
+      "category": "frontend",
+      "fileCount": 5,
+      "primaryLanguage": "TypeScript"
+    },
+    {
+      "path": "working/generated_project/src/router",
+      "category": "build",
+      "fileCount": 2,
+      "primaryLanguage": "TypeScript"
+    },
+    {
+      "path": "working/generated_project/src/services",
+      "category": "backend",
+      "fileCount": 3,
+      "primaryLanguage": "TypeScript"
     }
   ],
   "readmeParagraphs": {},
   "totals": {
-    "numFiles": 53,
-    "numDirs": 16,
-    "totalSizeBytes": 374558,
-    "totalLinesOfCode": 5660
+    "numFiles": 88,
+    "numDirs": 30,
+    "totalSizeBytes": 511933,
+    "totalLinesOfCode": 7049
   },
   "fileCategories": {
-    "other": 5,
-    "config": 8,
-    "source": 34,
+    "other": 10,
+    "config": 10,
+    "source": 62,
     "documentation": 6
   },
   "linesOfCodePerLanguage": {
-    "TypeScript": 780,
-    "JavaScript": 9,
-    "Python": 4871
+    "TypeScript": 1515,
+    "Python": 5525,
+    "JavaScript": 9
   },
   "filesPerLanguage": {
-    "TypeScript": 28,
-    "JavaScript": 1,
-    "Python": 5
+    "TypeScript": 56,
+    "Python": 5,
+    "JavaScript": 1
   },
   "projectTypes": [
     "JavaScript/Node.js"
@@ -131,13 +138,19 @@
     {
       "name": "validators",
       "numFiles": 5,
-      "totalLoc": 4871,
+      "totalLoc": 5525,
       "dominantLanguage": "Python"
     },
     {
-      "name": "generated_project",
+      "name": "working",
       "numFiles": 37,
       "totalLoc": 789,
+      "dominantLanguage": "TypeScript"
+    },
+    {
+      "name": "generated_project",
+      "numFiles": 36,
+      "totalLoc": 735,
       "dominantLanguage": "TypeScript"
     },
     {
@@ -162,15 +175,15 @@
       "name": "validators",
       "level": 1,
       "numFiles": 5,
-      "totalLoc": 4871,
+      "totalLoc": 5525,
       "dominantLanguage": "Python",
       "category": "General",
       "description": "General module with 5 files (Python)",
       "subdirectories": []
     },
     {
-      "path": "generated_project",
-      "name": "generated_project",
+      "path": "working",
+      "name": "working",
       "level": 1,
       "numFiles": 37,
       "totalLoc": 789,
@@ -179,11 +192,46 @@
       "description": "General module with 37 files (TypeScript)",
       "subdirectories": [
         {
+          "path": "working/generated_project",
+          "name": "generated_project",
+          "level": 2,
+          "numFiles": 37,
+          "totalLoc": 789,
+          "dominantLanguage": "TypeScript",
+          "category": "General",
+          "description": "General module with 37 files (TypeScript)",
+          "subdirectories": [
+            {
+              "path": "working/generated_project/src",
+              "name": "src",
+              "level": 3,
+              "numFiles": 29,
+              "totalLoc": 752,
+              "dominantLanguage": "TypeScript",
+              "category": "General",
+              "description": "General module with 29 files (TypeScript)",
+              "subdirectories": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "generated_project",
+      "name": "generated_project",
+      "level": 1,
+      "numFiles": 36,
+      "totalLoc": 735,
+      "dominantLanguage": "TypeScript",
+      "category": "General",
+      "description": "General module with 36 files (TypeScript)",
+      "subdirectories": [
+        {
           "path": "generated_project/src",
           "name": "src",
           "level": 2,
           "numFiles": 29,
-          "totalLoc": 752,
+          "totalLoc": 709,
           "dominantLanguage": "TypeScript",
           "category": "General",
           "description": "General module with 29 files (TypeScript)",
@@ -193,21 +241,10 @@
               "name": "components",
               "level": 3,
               "numFiles": 5,
-              "totalLoc": 166,
+              "totalLoc": 168,
               "dominantLanguage": "TypeScript",
               "category": "General",
               "description": "General module with 5 files (TypeScript)",
-              "subdirectories": []
-            },
-            {
-              "path": "generated_project/src/context",
-              "name": "context",
-              "level": 3,
-              "numFiles": 2,
-              "totalLoc": 85,
-              "dominantLanguage": "TypeScript",
-              "category": "General",
-              "description": "General module with 2 files (TypeScript)",
               "subdirectories": []
             },
             {
@@ -215,7 +252,7 @@
               "name": "hooks",
               "level": 3,
               "numFiles": 3,
-              "totalLoc": 74,
+              "totalLoc": 92,
               "dominantLanguage": "TypeScript",
               "category": "General",
               "description": "General module with 3 files (TypeScript)",
@@ -226,10 +263,21 @@
               "name": "services",
               "level": 3,
               "numFiles": 3,
-              "totalLoc": 67,
+              "totalLoc": 85,
               "dominantLanguage": "TypeScript",
               "category": "Service",
               "description": "Service module with 3 files (TypeScript)",
+              "subdirectories": []
+            },
+            {
+              "path": "generated_project/src/context",
+              "name": "context",
+              "level": 3,
+              "numFiles": 2,
+              "totalLoc": 49,
+              "dominantLanguage": "TypeScript",
+              "category": "General",
+              "description": "General module with 2 files (TypeScript)",
               "subdirectories": []
             },
             {
@@ -237,7 +285,7 @@
               "name": "router",
               "level": 3,
               "numFiles": 2,
-              "totalLoc": 37,
+              "totalLoc": 42,
               "dominantLanguage": "TypeScript",
               "category": "General",
               "description": "General module with 2 files (TypeScript)",
@@ -326,9 +374,18 @@
     "total": 0
   },
   "complexity": {
-    "averageFileSize": 106.79245283018868,
+    "averageFileSize": 80.10227272727273,
     "maxFileSize": 0,
     "nestedDepth": 0,
     "estimatedComplexity": "low"
+  },
+  "gitRepo": {
+    "firstCommitDate": "2025-12-03",
+    "totalCommits": 2,
+    "numContributors": 0,
+    "currentBranch": "main",
+    "remoteUrls": [
+      "https://github.com/Narl1nk/frontend-react.git"
+    ]
   }
 }
