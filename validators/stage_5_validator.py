@@ -21,6 +21,7 @@ CRITICAL VALIDATIONS:
 import sys
 import os
 import json
+import yaml
 import re
 from pathlib import Path
 from typing import Dict, List, Set, Optional, Tuple
@@ -69,6 +70,37 @@ class Stage5Validator:
         
         # Track installed packages
         self.installed_packages = set()
+    
+    def load_openapi_file(self, file_path: str) -> Optional[dict]:
+        """Load OpenAPI file supporting both JSON and YAML formats"""
+        # Try JSON first
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r') as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                pass  # Not JSON, try YAML
+        
+        # Try YAML if JSON failed or doesn't exist
+        yaml_path = file_path.replace('.json', '.yaml')
+        if os.path.exists(yaml_path):
+            try:
+                with open(yaml_path, 'r') as f:
+                    return yaml.safe_load(f)
+            except yaml.YAMLError as e:
+                print_error(f"Error parsing YAML file {yaml_path}: {e}")
+                return None
+        
+        # Try original path as YAML
+        if file_path.endswith('.yaml') or file_path.endswith('.yml'):
+            try:
+                with open(file_path, 'r') as f:
+                    return yaml.safe_load(f)
+            except yaml.YAMLError as e:
+                print_error(f"Error parsing YAML file {file_path}: {e}")
+                return None
+        
+        return None
         
     def load_inputs(self) -> bool:
         """Load ERD and OpenAPI files"""
@@ -79,8 +111,10 @@ class Stage5Validator:
                 authentication = business_logic.get('authentication', {})
                 self.auth_enabled = authentication.get('enabled', False)
             
-            with open(self.openapi_path, 'r') as f:
-                self.openapi_data = json.load(f)
+            self.openapi_data = self.load_openapi_file(self.openapi_path)
+            if self.openapi_data is None:
+                print_error(f"Failed to load OpenAPI file: {self.openapi_path}")
+                return False
             
             return True
         except Exception as e:
@@ -1376,12 +1410,32 @@ class Stage5Validator:
             
             # Check each view has a route definition
             for view_name in view_files:
-                # Check in routes.ts (e.g., USER: '/user' for UserView)
-                entity_name = view_name.replace('View', '')
-                route_constant = entity_name.upper()
+                # Extract entity name from view (e.g., 'User' from 'UserView')
+                base_name = view_name.replace('View', '')
                 
-                if not re.search(rf"{route_constant}\s*:", routes_content):
-                    file_errors.append(f"View '{view_name}' missing route constant in routes.ts")
+                # Convert camelCase to SNAKE_CASE for matching
+                # e.g., 'UserForm' -> 'USER_FORM', 'UserList' -> 'USER_LIST'
+                snake_case = re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', base_name).upper()
+                
+                # Try multiple naming patterns for route constants:
+                # 1. EXACT_SNAKE_CASE: (e.g., USER_FORM:)
+                # 2. EXACT_SNAKE_CASE_VIEW: (e.g., USER_FORM_VIEW:)
+                # 3. Any constant containing the snake_case pattern
+                
+                patterns = [
+                    rf"\b{snake_case}\s*:",           # USER_FORM:
+                    rf"\b{snake_case}_VIEW\s*:",      # USER_FORM_VIEW:
+                    rf"\b{snake_case}_[A-Z_]+\s*:",   # USER_FORM_SOMETHING:
+                ]
+                
+                found = False
+                for pattern in patterns:
+                    if re.search(pattern, routes_content):
+                        found = True
+                        break
+                
+                if not found:
+                    file_errors.append(f"View '{view_name}' missing route constant in routes.ts (expected: {snake_case}* constant)")
                 
                 # Check view is imported in router/index.tsx
                 if not re.search(rf"import.*{view_name}.*from.*views", router_content):
@@ -1532,6 +1586,108 @@ class Stage5Validator:
             print_success("All imports validated against package.json")
             return True
 
+
+    def validate_stage_output(self):
+        """Validate all stage outputs - gather from stages 2-5 and verify completeness"""
+        print_section("STAGE OUTPUT VALIDATION (ALL STAGES)")
+        
+        # Gather all documented files from all stages
+        all_documented_files = set()
+        stages_found = []
+        
+        for stage in [2, 3, 4, 5]:
+            output_file = Path(f"output/stage_{stage}_output.json")
+            
+            if not output_file.exists():
+                print_warning(f"output/stage_{stage}_output.json not found (skipping)")
+                continue
+            
+            try:
+                with open(output_file, 'r') as f:
+                    output_data = json.load(f)
+                
+                if 'files' not in output_data:
+                    print_error(f"stage_{stage}_output.json missing 'files' key")
+                    continue
+                
+                stage_files = set(output_data['files'].keys())
+                all_documented_files.update(stage_files)
+                stages_found.append(stage)
+                print_info(f"Stage {stage}: {len(stage_files)} files documented")
+                
+            except json.JSONDecodeError as e:
+                print_error(f"Invalid JSON in stage_{stage}_output.json: {e}")
+            except Exception as e:
+                print_error(f"Error reading stage_{stage}_output.json: {e}")
+        
+        if not stages_found:
+            print_error("No stage output files found")
+            return
+        
+        print_info(f"Total documented files across stages {stages_found}: {len(all_documented_files)}")
+        
+        # Scan all actual files in generated_project
+        actual_files = set()
+        base_path = Path("generated_project")
+        
+        if not base_path.exists():
+            print_error("generated_project directory not found")
+            return
+        
+        # Scan src directory for TypeScript files
+        src_path = base_path / "src"
+        if src_path.exists():
+            for root, dirs, files in os.walk(src_path):
+                # Skip node_modules and other build directories
+                dirs[:] = [d for d in dirs if d not in ['node_modules', 'dist', 'build', '.vite']]
+                
+                for file in files:
+                    if file.endswith(('.ts', '.tsx', '.css')) and not file.endswith('.d.ts'):
+                        full_path = Path(root) / file
+                        rel_path = full_path.relative_to(base_path)
+                        actual_files.add(str(rel_path))
+        
+        # Check root-level files
+        for file_name in ['index.html', '.env', '.env.example', 'vite.config.ts', 'tsconfig.json']:
+            file_path = base_path / file_name
+            if file_path.exists():
+                actual_files.add(file_name)
+        
+        print_info(f"Total actual files in project: {len(actual_files)}")
+        
+        # Bidirectional validation
+        errors_found = False
+        
+        # Check 1: All documented files exist
+        missing_files = []
+        for doc_file in sorted(all_documented_files):
+            file_path = base_path / doc_file
+            if not file_path.exists():
+                missing_files.append(doc_file)
+        
+        if missing_files:
+            errors_found = True
+            print_error(f"Documented files that don't exist ({len(missing_files)}):")
+            for file in missing_files[:20]:  # Limit output
+                print(f"  - {file}")
+            if len(missing_files) > 20:
+                print(f"  ... and {len(missing_files) - 20} more")
+        
+        # Check 2: All actual files are documented
+        undocumented_files = actual_files - all_documented_files
+        if undocumented_files:
+            errors_found = True
+            print_error(f"Generated files not documented in any stage ({len(undocumented_files)}):")
+            for file in sorted(undocumented_files)[:20]:  # Limit output
+                print(f"  - {file}")
+            if len(undocumented_files) > 20:
+                print(f"  ... and {len(undocumented_files) - 20} more")
+        
+        if not errors_found:
+            print_success(f"✓ Perfect match: All {len(all_documented_files)} documented files exist")
+            print_success(f"✓ Complete documentation: All {len(actual_files)} generated files documented")
+        
+        return not errors_found
 def main():
     if len(sys.argv) != 3:
         print_error("Usage: python3 stage_5_validator.py <erd.json> <openapi.json>")

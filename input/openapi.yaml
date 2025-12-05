@@ -1,0 +1,174 @@
+version: 1.0.0
+title: User Management System API
+security:
+  authType: none
+  details: {}
+pagination:
+  strategy: page
+  defaultPageSize: 25
+  maxPageSize: 100
+schemas:
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: Unique user identifier
+      name:
+        type: string
+        description: Full name of the user
+      email:
+        type: string
+        format: email
+        description: User email address for login and identification
+      created_at:
+        type: string
+        format: date-time
+        description: Timestamp when user was created
+      updated_at:
+        type: string
+        format: date-time
+        description: Timestamp when user was last updated
+      is_active:
+        type: boolean
+        description: Whether the user account is active
+    required:
+    - id
+    - name
+    - email
+    - created_at
+    - updated_at
+    - is_active
+  UserCreate:
+    type: object
+    properties:
+      name:
+        type: string
+        description: Full name of the user
+      email:
+        type: string
+        format: email
+        description: User email address for login and identification
+      password:
+        type: string
+        minLength: 8
+        description: User password for authentication
+    required:
+    - name
+    - email
+    - password
+  UserUpdate:
+    type: object
+    properties:
+      name:
+        type: string
+        description: Full name of the user
+      email:
+        type: string
+        format: email
+        description: User email address for login and identification
+      is_active:
+        type: boolean
+        description: Whether the user account is active
+  PaginatedUsers:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            email:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+            is_active:
+              type: boolean
+      total:
+        type: integer
+        description: Total number of users
+      page:
+        type: integer
+        description: Current page number
+      size:
+        type: integer
+        description: Number of items per page
+      pages:
+        type: integer
+        description: Total number of pages
+    required:
+    - items
+    - total
+    - page
+    - size
+    - pages
+  ErrorResponse:
+    type: object
+    properties:
+      detail:
+        type: string
+        description: Error message describing the issue
+    required:
+    - detail
+errors:
+  default: An error occurred
+  ValidationError: Request validation failed
+  NotFoundError: Resource not found
+  UnauthorizedError: Authentication required
+paths:
+  /api/v1/users:
+    get:
+      operationId: list_users
+      summary: List all users
+      responses:
+        '200':
+          description: Successfully retrieved users list
+          content:
+            application/json:
+              schema:
+                $ref: '#/schemas/PaginatedUsers'
+    post:
+      operationId: create_user
+      summary: Create a new user
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/schemas/User'
+  /api/v1/users/{id}:
+    get:
+      operationId: get_user
+      summary: Get user by ID
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/schemas/User'
+    put:
+      operationId: update_user
+      summary: Update existing user
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/schemas/User'
+    delete:
+      operationId: delete_user
+      summary: Delete existing user
+      responses:
+        '204':
+          description: User deleted successfully

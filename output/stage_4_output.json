@@ -1,0 +1,30 @@
+{
+  "stage": 4,
+  "timestamp": "2025-12-04T10:30:00Z",
+  "files": {
+    "src/views/Home.tsx": {
+      "description": "Home/dashboard view with quick links",
+      "exports": ["Home"]
+    },
+    "src/views/NotFound.tsx": {
+      "description": "404 error page",
+      "exports": ["NotFound"]
+    },
+    "src/router/routes.ts": {
+      "description": "Route path constants and configuration",
+      "exports": ["ROUTES", "RouteConfig", "routeConfig"]
+    },
+    "src/router/index.tsx": {
+      "description": "Main router setup with all routes",
+      "exports": ["AppRouter"]
+    },
+    "src/components/Layout.tsx": {
+      "description": "Main layout wrapper component",
+      "exports": ["Layout"]
+    },
+    "src/components/Navbar.tsx": {
+      "description": "Navigation bar component",
+      "exports": ["Navbar"]
+    }
+  }
+}

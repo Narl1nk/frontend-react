@@ -3,7 +3,7 @@ import { AppRouter } from './router';
 import { AuthProvider } from './context/AuthContext';
 import './App.css';
 
-const App: React.FC = () => {
+export const App: React.FC = () => {
   return (
     <AuthProvider>
       <div className="app">
@@ -12,5 +12,3 @@ const App: React.FC = () => {
     </AuthProvider>
   );
 };
-
-export default App;

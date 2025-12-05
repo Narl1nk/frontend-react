@@ -1,0 +1,34 @@
+{
+  "stage": 5,
+  "timestamp": "2025-12-04T10:30:00Z",
+  "files": {
+    "src/App.tsx": {
+      "description": "Root application component integrating router and providers",
+      "exports": ["App"]
+    },
+    "src/main.tsx": {
+      "description": "Application entry point with React 18 createRoot",
+      "exports": []
+    },
+    "src/App.css": {
+      "description": "Global application styles and component styling",
+      "exports": []
+    },
+    "src/index.css": {
+      "description": "CSS reset and base typography styles",
+      "exports": []
+    },
+    "src/context/AuthContext.tsx": {
+      "description": "Authentication context with login/logout functionality",
+      "exports": ["AuthProvider", "useAuth"]
+    },
+    "src/context/index.ts": {
+      "description": "Barrel export for context providers",
+      "exports": ["*"]
+    },
+    "index.html": {
+      "description": "HTML template with root element",
+      "exports": []
+    }
+  }
+}

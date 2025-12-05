@@ -453,10 +453,77 @@ export * from './Entity2View';
 
 ---
 
-### Step 6: Validation
+### Step 6: Generate Stage Output Documentation
+
+**Create:** `output/stage_2_output.json`
+
+**Structure:**
+```json
+{
+  "stage": 2,
+  "timestamp": "2025-12-04T10:30:00Z",
+  "files": {
+    "src/types/Entity1.types.ts": {
+      "description": "TypeScript type definitions for Entity1",
+      "exports": ["Entity1", "Entity1Create", "Entity1Update", "Entity1Response"],
+    },
+    "src/types/index.ts": {
+      "description": "Barrel export for all type definitions",
+      "exports": ["*"],
+    },
+    "src/services/entity1.service.ts": {
+      "description": "API service methods for Entity1",
+      "exports": ["entity1Service"],
+      "methods": ["getAll", "getById", "create", "update", "delete"],
+    },
+    "src/services/index.ts": {
+      "description": "Barrel export for all services",
+      "exports": ["*"],
+    },
+    "src/components/Entity1List.tsx": {
+      "description": "List component for Entity1",
+      "exports": ["Entity1List"],
+    },
+    "src/components/Entity1Form.tsx": {
+      "description": "Form component for Entity1 create/update",
+      "exports": ["Entity1Form"],
+    },
+    "src/components/index.ts": {
+      "description": "Barrel export for all components",
+      "exports": ["*"],
+    },
+    "src/views/Entity1View.tsx": {
+      "description": "Main view for Entity1 management",
+      "exports": ["Entity1View"],
+    },
+    "src/views/index.ts": {
+      "description": "Barrel export for all views",
+      "exports": ["*"],
+    }
+  }
+}
+```
+
+**Generation Rules:**
+1. Include ALL files created in this stage
+2. File paths relative to generated_project/
+3. Document all exports from each file
+4. For services: list all methods
+5. For components: specify purpose
+6. Timestamp in ISO-8601 format
+7. Include barrel files (index.ts)
+
+**Create:**
+```bash
+builtin_create_new_file: output/stage_2_output.json
+```
+
+---
+
+### Step 7: Validation
 
 ```bash
-builtin_run_terminal_command: python3 validators/stage_2_validator.py output/erd.json
+builtin_run_terminal_command: python3 validators/stage_2_validator.py output/erd.json input/openapi.yaml
 ```
 
 **If fails**: Fix files and re-validate
@@ -480,7 +547,7 @@ builtin_run_terminal_command: python3 validators/stage_2_validator.py output/erd
 
 **REMINDER**: Follow these rules strictly
 
-1. **Every entity thbat has an endpoint defined in openapi.json = 3+ files** (Types, Service, Components based on operations)
+1. **Every entity that has an endpoint defined in openapi.json = 3+ files** (Types, Service, Components based on operations)
 2. **Type files** = Base interface + Create DTO + Update DTO + Response interface
 3. **Service methods** = Only operations from erd.json entities[].operations[]
 4. **Component generation**:
@@ -490,6 +557,7 @@ builtin_run_terminal_command: python3 validators/stage_2_validator.py output/erd
 5. **ES6 imports** = Use import/export statements
 6. **Type safety** = All functions and components properly typed
 7. **Barrel exports** = Update index.ts in each directory
+8. **Output documentation** = Generate stage_2_output.json with all files
 
 ---
 
@@ -538,20 +606,21 @@ builtin_run_terminal_command: python3 validators/stage_2_validator.py output/erd
 ## Quality Checklist
 
 - [ ] All entities have type definitions
-- [ ] All entities with endpoints in openapi.yaml have service files
+- [ ] All entities with endpoints in openapi.json have service files
 - [ ] All type files have Create and Update DTOs
 - [ ] All services have only operations from erd.json
 - [ ] All components properly typed
 - [ ] All barrel exports (index.ts) updated
 - [ ] ES6 import/export style used
 - [ ] TypeScript interfaces complete
+- [ ] stage_2_output.json generated with all files
 - [ ] Validation passes
 
 ---
 
 ## Agent Mode
 
-**Execute**: read inputs → create directories → generate types (all DTOs) → generate services (operations only) → generate components (based on operations) → generate views → update barrel exports → validate → fix if needed → complete
+**Execute**: read inputs → create directories → generate types (all DTOs) → generate services (operations only) → generate components (based on operations) → generate views → update barrel exports → generate output documentation → validate → fix if needed → complete
 
 **REMINDER**: Use `builtin_create_new_file` for every file creation
 
@@ -567,3 +636,4 @@ builtin_run_terminal_command: python3 validators/stage_2_validator.py output/erd
 * Code is TypeScript compliant
 * ES6 import/export style used
 * Type safety maintained throughout
+* stage_2_output.json contains all generated files

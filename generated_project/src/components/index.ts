@@ -1,7 +1,8 @@
-// Confirm and align exports with current project scopes
+
+// Existing components exports
+export * from './UserList';
+export * from './UserForm';
+
+// Add layout components
 export * from './Layout';
 export * from './Navbar';
-export * from './UserForm';
-export * from './UserList';
-
-// Ensure all components are exported accurately

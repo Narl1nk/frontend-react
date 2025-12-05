@@ -22,6 +22,7 @@ CRITICAL VALIDATIONS:
 import sys
 import os
 import json
+import yaml
 import re
 from pathlib import Path
 from typing import Dict, List, Set, Optional, Tuple
@@ -67,6 +68,37 @@ class Stage4Validator:
         # Track entity views
         self.entity_views = []
         self.entities = []
+    
+    def load_openapi_file(self, file_path: str) -> Optional[dict]:
+        """Load OpenAPI file supporting both JSON and YAML formats"""
+        # Try JSON first
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r') as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                pass  # Not JSON, try YAML
+        
+        # Try YAML if JSON failed or doesn't exist
+        yaml_path = file_path.replace('.json', '.yaml')
+        if os.path.exists(yaml_path):
+            try:
+                with open(yaml_path, 'r') as f:
+                    return yaml.safe_load(f)
+            except yaml.YAMLError as e:
+                print_error(f"Error parsing YAML file {yaml_path}: {e}")
+                return None
+        
+        # Try original path as YAML
+        if file_path.endswith('.yaml') or file_path.endswith('.yml'):
+            try:
+                with open(file_path, 'r') as f:
+                    return yaml.safe_load(f)
+            except yaml.YAMLError as e:
+                print_error(f"Error parsing YAML file {file_path}: {e}")
+                return None
+        
+        return None
         
     def load_inputs(self) -> bool:
         """Load ERD and OpenAPI files"""
@@ -75,8 +107,10 @@ class Stage4Validator:
                 self.erd_data = json.load(f)
                 self.entities = [entity.get('name') for entity in self.erd_data.get('entities', [])]
             
-            with open(self.openapi_path, 'r') as f:
-                self.openapi_data = json.load(f)
+            self.openapi_data = self.load_openapi_file(self.openapi_path)
+            if self.openapi_data is None:
+                print_error(f"Failed to load OpenAPI file: {self.openapi_path}")
+                return False
             
             # Scan existing entity views
             views_path = self.base_path / "src" / "views"
@@ -715,10 +749,50 @@ class Stage4Validator:
             print_info(f"Validated routing for {len(self.entity_views)} entity views")
             return True
 
+
+    def validate_stage_output(self):
+        """Validate stage_4_output.json completeness"""
+        print_section("STAGE OUTPUT VALIDATION")
+        
+        output_file = Path("output/stage_4_output.json")
+        
+        if not output_file.exists():
+            print_error("output/stage_4_output.json not found")
+            return
+        
+        try:
+            with open(output_file, 'r') as f:
+                output_data = json.load(f)
+            
+            if 'files' not in output_data:
+                print_error("output/stage_4_output.json missing 'files' key")
+                return
+            
+            documented_files = set(output_data['files'].keys())
+            base_path = Path("generated_project")
+            
+            # Check all documented files exist
+            missing = []
+            for doc_file in documented_files:
+                file_path = base_path / doc_file
+                if not file_path.exists():
+                    missing.append(doc_file)
+            
+            if missing:
+                print_error(f"Documented files that don't exist:")
+                for file in sorted(missing):
+                    print(f"  - {file}")
+            else:
+                print_success(f"All {len(documented_files)} documented files exist")
+            
+        except json.JSONDecodeError as e:
+            print_error(f"Invalid JSON in stage_4_output.json: {e}")
+        except Exception as e:
+            print_error(f"Error validating stage output: {e}")
 def main():
     if len(sys.argv) != 3:
         print_error("Usage: python3 stage_4_validator.py <erd.json> <openapi.json>")
-        print_info("Example: python3 validators/stage_4_validator.py output/erd.json output/openapi.json")
+        print_info("Example: python3 validators/stage_4_validator.py output/erd.json input/openapi.yaml")
         sys.exit(1)
     
     erd_path = sys.argv[1]

@@ -249,10 +249,86 @@ export * from './usePagination';
 
 ---
 
-### Step 11: Validation
+### Step 11: Generate Stage Output Documentation
+
+**Create:** `output/stage_3_output.json`
+
+**Structure:**
+```json
+{
+  "stage": 3,
+  "timestamp": "2025-12-04T10:30:00Z",
+  "files": {
+    "src/services/api.ts": {
+      "description": "Axios API client with request/response interceptors",
+      "exports": ["default"]
+    },
+    "src/utils/validation.ts": {
+      "description": "Validation utility functions",
+      "exports": ["ValidationResult", "isValidEmail", "isValidPassword", "isValidLength", "isValidNumber", "isRequired"]
+    },
+    "src/utils/formatting.ts": {
+      "description": "Formatting utility functions for dates, numbers, and strings",
+      "exports": ["formatDate", "formatDateTime", "formatRelativeTime", "formatCurrency", "formatNumber", "formatPercentage", "truncate", "capitalize", "toTitleCase", "formatBoolean"]
+    },
+    "src/utils/storage.ts": {
+      "description": "Type-safe storage utilities for localStorage and sessionStorage",
+      "exports": ["storage", "sessionStorage", "tokenStorage"]
+    },
+    "src/utils/index.ts": {
+      "description": "Barrel export for utilities",
+      "exports": ["*"]
+    },
+    "src/hooks/useApi.ts": {
+      "description": "Custom hook for managing async API calls",
+      "exports": ["useApi"]
+    },
+    "src/hooks/usePagination.ts": {
+      "description": "Custom hook for pagination logic",
+      "exports": ["usePagination"]
+    },
+    "src/hooks/index.ts": {
+      "description": "Barrel export for hooks",
+      "exports": ["*"]
+    },
+    ".env": {
+      "description": "Environment variables configuration",
+      "exports": []
+    },
+    ".env.example": {
+      "description": "Example environment variables template",
+      "exports": []
+    },
+    "vite.config.ts": {
+      "description": "Vite build tool configuration",
+      "exports": ["default"]
+    },
+    "tsconfig.json": {
+      "description": "TypeScript compiler configuration",
+      "exports": []
+    }
+  }
+}
+```
+
+**Generation Rules:**
+1. Include ALL files created or modified in this stage
+2. File paths relative to generated_project/ (except output files)
+3. Document all exports from each file
+4. Timestamp in ISO-8601 format
+5. Config files have empty exports array
+
+**Create:**
+```bash
+builtin_create_new_file: output/stage_3_output.json
+```
+
+---
+
+### Step 12: Validation
 
 ```bash
-builtin_run_terminal_command: python3 validators/stage_3_validator.py output/erd.json output/openapi.json
+builtin_run_terminal_command: python3 validators/stage_3_validator.py output/erd.json input/openapi.yaml
 ```
 
 **If fails**: Fix files and re-validate
@@ -273,6 +349,7 @@ builtin_run_terminal_command: python3 validators/stage_3_validator.py output/erd
 8. **Type safety** = All functions explicitly typed with return types
 9. **Error handling** = All storage and API operations wrapped in try-catch
 10. **Barrel exports** = Update index.ts in utils/ and hooks/
+11. **Output documentation** = Generate stage_3_output.json with all files
 
 ---
 
@@ -305,13 +382,14 @@ builtin_run_terminal_command: python3 validators/stage_3_validator.py output/erd
 - [ ] Barrel exports updated
 - [ ] All functions typed with explicit return types
 - [ ] ES6 import/export style
+- [ ] stage_3_output.json generated with all files
 - [ ] Validation passes
 
 ---
 
 ## Agent Mode
 
-**Execute**: read inputs → generate api client → generate validation utils → generate formatting utils → generate storage utils → generate hooks → create .env → update vite.config.ts → update tsconfig.json → update barrel exports → validate → fix if needed → complete
+**Execute**: read inputs → generate api client → generate validation utils → generate formatting utils → generate storage utils → generate hooks → create .env → update vite.config.ts → update tsconfig.json → update barrel exports → generate output documentation → validate → fix if needed → complete
 
 **REMINDER**: Use `builtin_create_new_file` for every file creation
 
@@ -326,3 +404,4 @@ builtin_run_terminal_command: python3 validators/stage_3_validator.py output/erd
 * Environment and build configurations complete
 * All barrel exports updated
 * Code is production-ready and maintainable
+* stage_3_output.json contains all generated files

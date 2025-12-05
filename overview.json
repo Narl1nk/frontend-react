@@ -1,6 +1,6 @@
 {
   "rootFolder": "/home/andrewf/Desktop/DevPulse_/frontend_react",
-  "analyzedAt": "2025-12-04T09:47:02.536Z",
+  "analyzedAt": "2025-12-05T15:22:49.172Z",
   "rootStructure": [
     {
       "name": "generated_project",
@@ -17,8 +17,8 @@
     {
       "name": "overview.json",
       "type": "file",
-      "size": 8047,
-      "lines": 334
+      "size": 9685,
+      "lines": 391
     },
     {
       "name": "prompt",
@@ -37,7 +37,7 @@
     "overview.json": [
       "{",
       "\"rootFolder\": \"/home/andrewf/Desktop/DevPulse_/frontend_react\",",
-      "\"analyzedAt\": \"2025-12-03T11:35:47.962Z\",",
+      "\"analyzedAt\": \"2025-12-05T15:18:38.945Z\",",
       "\"rootStructure\": [",
       "{",
       "\"name\": \"generated_project\",",
@@ -99,8 +99,8 @@
   "totals": {
     "numFiles": 88,
     "numDirs": 30,
-    "totalSizeBytes": 511933,
-    "totalLinesOfCode": 7049
+    "totalSizeBytes": 542239,
+    "totalLinesOfCode": 7538
   },
   "fileCategories": {
     "other": 10,
@@ -110,7 +110,7 @@
   },
   "linesOfCodePerLanguage": {
     "TypeScript": 1515,
-    "Python": 5525,
+    "Python": 6014,
     "JavaScript": 9
   },
   "filesPerLanguage": {
@@ -138,7 +138,7 @@
     {
       "name": "validators",
       "numFiles": 5,
-      "totalLoc": 5525,
+      "totalLoc": 6014,
       "dominantLanguage": "Python"
     },
     {
@@ -175,7 +175,7 @@
       "name": "validators",
       "level": 1,
       "numFiles": 5,
-      "totalLoc": 5525,
+      "totalLoc": 6014,
       "dominantLanguage": "Python",
       "category": "General",
       "description": "General module with 5 files (Python)",
@@ -374,14 +374,14 @@
     "total": 0
   },
   "complexity": {
-    "averageFileSize": 80.10227272727273,
+    "averageFileSize": 85.6590909090909,
     "maxFileSize": 0,
     "nestedDepth": 0,
     "estimatedComplexity": "low"
   },
   "gitRepo": {
-    "firstCommitDate": "2025-12-03",
-    "totalCommits": 2,
+    "firstCommitDate": "2025-12-04",
+    "totalCommits": 3,
     "numContributors": 0,
     "currentBranch": "main",
     "remoteUrls": [

@@ -1,0 +1,43 @@
+{
+  "stage": 2,
+  "timestamp": "2025-12-04T10:30:00Z",
+  "files": {
+    "src/types/User.types.ts": {
+      "description": "TypeScript type definitions for User",
+      "exports": ["User", "UserCreate", "UserUpdate", "UserResponse"]
+    },
+    "src/types/index.ts": {
+      "description": "Barrel export for all type definitions",
+      "exports": ["*"]
+    },
+    "src/services/user.service.ts": {
+      "description": "API service methods for User",
+      "exports": ["userService"],
+      "methods": ["getAll", "getById", "create", "update", "delete"]
+    },
+    "src/services/index.ts": {
+      "description": "Barrel export for all services",
+      "exports": ["*"]
+    },
+    "src/components/UserList.tsx": {
+      "description": "List component for User",
+      "exports": ["UserList"]
+    },
+    "src/components/UserForm.tsx": {
+      "description": "Form component for User create/update",
+      "exports": ["UserForm"]
+    },
+    "src/components/index.ts": {
+      "description": "Barrel export for all components",
+      "exports": ["*"]
+    },
+    "src/views/UserView.tsx": {
+      "description": "Main view for User management",
+      "exports": ["UserView"]
+    },
+    "src/views/index.ts": {
+      "description": "Barrel export for all views",
+      "exports": ["*"]
+    }
+  }
+}

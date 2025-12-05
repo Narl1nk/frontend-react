@@ -1,30 +1,24 @@
 import api from './api';
-import { User, UserCreate, UserUpdate, UserResponse } from '../types/User.types';
+import { User, UserCreate, UserUpdate, UserResponse } from '../types';
 
 export const userService = {
   async getAll(): Promise<User[]> {
-    const response = await api.get<UserResponse>('/users');
+    const response = await api.get<UserResponse>('/api/users');
     return response.data.data as User[];
   },
-
   async getById(id: number): Promise<User> {
-    const response = await api.get<UserResponse>(`/users/${id}`);
+    const response = await api.get<UserResponse>(`/api/users/${id}`);
     return response.data.data as User;
   },
-
   async create(data: UserCreate): Promise<User> {
-    const response = await api.post<UserResponse>('/users', data);
+    const response = await api.post<UserResponse>('/api/users', data);
     return response.data.data as User;
   },
-
   async update(id: number, data: UserUpdate): Promise<User> {
-    const response = await api.patch<UserResponse>(`/users/${id}`, data);
+    const response = await api.put<UserResponse>(`/api/users/${id}`, data);
     return response.data.data as User;
   },
-
   async delete(id: number): Promise<void> {
-    await api.delete(`/users/${id}`);
+    await api.delete(`/api/users/${id}`);
   }
 };
-
-// Confirm export for userService object

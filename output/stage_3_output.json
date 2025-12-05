@@ -1,0 +1,54 @@
+{
+  "stage": 3,
+  "timestamp": "2025-12-04T10:30:00Z",
+  "files": {
+    "src/services/api.ts": {
+      "description": "Axios API client with request/response interceptors",
+      "exports": ["default"]
+    },
+    "src/utils/validation.ts": {
+      "description": "Validation utility functions",
+      "exports": ["ValidationResult", "isValidEmail", "isValidPassword", "isValidLength", "isValidNumber", "isRequired"]
+    },
+    "src/utils/formatting.ts": {
+      "description": "Formatting utility functions for dates, numbers, and strings",
+      "exports": ["formatDate", "formatDateTime", "formatRelativeTime", "formatCurrency", "formatNumber", "formatPercentage", "truncate", "capitalize", "toTitleCase", "formatBoolean"]
+    },
+    "src/utils/storage.ts": {
+      "description": "Type-safe storage utilities for localStorage and sessionStorage",
+      "exports": ["storage", "sessionStorage", "tokenStorage"]
+    },
+    "src/utils/index.ts": {
+      "description": "Barrel export for utilities",
+      "exports": ["*"]
+    },
+    "src/hooks/useApi.ts": {
+      "description": "Custom hook for managing async API calls",
+      "exports": ["useApi"]
+    },
+    "src/hooks/usePagination.ts": {
+      "description": "Custom hook for pagination logic",
+      "exports": ["usePagination"]
+    },
+    "src/hooks/index.ts": {
+      "description": "Barrel export for hooks",
+      "exports": ["*"]
+    },
+    ".env": {
+      "description": "Environment variables configuration",
+      "exports": []
+    },
+    ".env.example": {
+      "description": "Example environment variables template",
+      "exports": []
+    },
+    "vite.config.ts": {
+      "description": "Vite build tool configuration",
+      "exports": ["default"]
+    },
+    "tsconfig.json": {
+      "description": "TypeScript compiler configuration",
+      "exports": []
+    }
+  }
+}

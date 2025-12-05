@@ -4,9 +4,9 @@ import { Link } from 'react-router-dom';
 export const Home: React.FC = () => {
   return (
     <div className="home-view">
-      <h1>Welcome to the Application</h1>
+      <h1>Welcome to the User Management System</h1>
       <div className="quick-links">
-        <Link to="/user">Manage User</Link> {/* Adjusted to match existing views */}
+        <Link to="/users//list">Manage Users</Link>
       </div>
     </div>
   );

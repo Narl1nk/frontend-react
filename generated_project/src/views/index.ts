@@ -1,7 +1,8 @@
-// ... existing code ...
 
+export * from './UserView';
+export * from './UserFormView';
+export * from './UserListView';
+
+// Add new views
 export * from './Home';
 export * from './NotFound';
-export * from './UserView';
-
-// Confirm export consistency for all views

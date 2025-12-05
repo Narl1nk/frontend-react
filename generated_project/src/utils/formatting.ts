@@ -1,57 +1,94 @@
+// Function to format date based on format type
 export function formatDate(date: string | Date, format: 'short' | 'long' | 'iso' = 'iso'): string {
-  const d = new Date(date);
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const options: Intl.DateTimeFormatOptions = {};
   switch (format) {
     case 'short':
-      return d.toLocaleDateString();
+      options.year = '2-digit';
+      options.month = '2-digit';
+      options.day = '2-digit';
+      break;
     case 'long':
-      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      options.year = 'numeric';
+      options.month = 'long';
+      options.day = 'numeric';
+      break;
     case 'iso':
     default:
-      return d.toISOString().slice(0, 10);
+      return dateObj.toISOString();
+  }
+  return dateObj.toLocaleDateString(undefined, options);
+}
+
+// Function to format date and time
+export function formatDateTime(date: string | Date): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleString();
+}
+
+// Function to format relative time
+export function formatRelativeTime(date: string | Date): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const now = new Date();
+  const diff = Math.abs(now.getTime() - dateObj.getTime());
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) {
+    return `${days} days ago`;
+  } else if (hours > 0) {
+    return `${hours} hours ago`;
+  } else if (minutes > 0) {
+    return `${minutes} minutes ago`;
+  } else {
+    return `${seconds} seconds ago`;
   }
 }
 
-export function formatDateTime(date: string | Date): string {
-  return new Date(date).toLocaleString();
-}
-
-export function formatRelativeTime(date: string | Date): string {
-  const deltaSeconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (deltaSeconds < 60) return 'just now';
-  if (deltaSeconds < 3600) return `${Math.floor(deltaSeconds / 60)} minutes ago`;
-  if (deltaSeconds < 86400) return `${Math.floor(deltaSeconds / 3600)} hours ago`;
-  return `${Math.floor(deltaSeconds / 86400)} days ago`;
-}
-
+// Function to format currency
 export function formatCurrency(amount: number, currency: string = 'USD'): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
 }
 
-export function formatNumber(value: number, decimals: number = 0): string {
-  return new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
+// Function to format number with decimals
+export function formatNumber(value: number, decimals: number = 2): string {
+  return value.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
+// Function to format percentage
 export function formatPercentage(value: number, decimals: number = 2): string {
-  return `${formatNumber(value * 100, decimals)}%`;
+  return `${(value * 100).toFixed(decimals)}%`;
 }
 
+// Function to truncate strings and add ellipsis
 export function truncate(text: string, maxLength: number): string {
-  return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
+  if (text.length > maxLength) {
+    return `${text.substring(0, maxLength - 3)}...`;
+  }
+  return text;
 }
 
+// Function to capitalize first letter of string
 export function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+// Function to convert string to title case
 export function toTitleCase(text: string): string {
-  return text.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+  return text.split(' ').map(word => capitalize(word)).join(' ');
 }
 
-export function formatBoolean(value: boolean, format: 'yes-no' | 'true-false' | 'on-off' = 'true-false'): string {
-  const formats = {
-    'yes-no': value ? 'Yes' : 'No',
-    'true-false': value ? 'True' : 'False',
-    'on-off': value ? 'On' : 'Off'
-  };
-  return formats[format];
+// Function to format boolean values
+export function formatBoolean(value: boolean, format: 'yes/no' | 'true/false' | 'on/off' = 'true/false'): string {
+  switch (format) {
+    case 'yes/no':
+      return value ? 'Yes' : 'No';
+    case 'on/off':
+      return value ? 'On' : 'Off';
+    case 'true/false':
+    default:
+      return value ? 'True' : 'False';
+  }
 }

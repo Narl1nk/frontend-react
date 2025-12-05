@@ -1,6 +1,5 @@
 import React from 'react';
-import { UserForm, UserList } from '../components';
-// Ensure imports are properly aligned
+import { UserList, UserForm } from '../components';
 
 export const UserView: React.FC = () => {
   const [showForm, setShowForm] = React.useState(false);
@@ -13,7 +12,11 @@ export const UserView: React.FC = () => {
           {showForm ? 'Show List' : 'Create New'}
         </button>
       </div>
-      {showForm ? <UserForm onSubmit={() => setShowForm(false)} /> : <UserList />}
+      {showForm ? (
+        <UserForm onSubmit={() => setShowForm(false)} />
+      ) : (
+        <UserList />
+      )}
     </div>
   );
 };

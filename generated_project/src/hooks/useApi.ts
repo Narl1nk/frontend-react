@@ -1,39 +1,52 @@
 import { useState, useCallback } from 'react';
 
-interface UseApiReturn<T> {
+interface ApiState<T> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+}
+
+/**
+ * Custom React hook for managing async API calls with type safety.
+ * @param apiFunction The asynchronous function making the API call.
+ */
+
+export function useApi<T>(apiFunction: (...args: any[]) => Promise<T>): {
   data: T | null;
   loading: boolean;
   error: string | null;
   execute: (...args: any[]) => Promise<T | null>;
   reset: () => void;
-}
+} {
+  const [state, setState] = useState<ApiState<T>>({
+    data: null,
+    loading: false,
+    error: null
+  });
 
-function useApi<T>(apiFunction: (...args: any[]) => Promise<T>): UseApiReturn<T> {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const execute = useCallback(async (...args: any[]): Promise<T | null> => {
+  // Execute the API function and manage the loading and error states
+  const execute = useCallback(async (...args: any[]) => {
+    setState({ ...state, loading: true });
     try {
-      setLoading(true);
-      const result = await apiFunction(...args);
-      setData(result);
-      return result;
-    } catch (err) {
-      setError(err.message || 'An error occurred');
+      const data = await apiFunction(...args);
+      setState({ data, loading: false, error: null });
+      return data;
+    } catch (err: any) {
+      setState({ data: null, loading: false, error: err.message || 'Error' });
       return null;
-    } finally {
-      setLoading(false);
     }
   }, [apiFunction]);
 
+  // Reset function to clear state
   const reset = () => {
-    setData(null);
-    setLoading(false);
-    setError(null);
+    setState({ data: null, loading: false, error: null });
   };
 
-  return { data, loading, error, execute, reset };
+  return {
+    data: state.data,
+    loading: state.loading,
+    error: state.error,
+    execute,
+    reset
+  };
 }
-
-export default useApi;

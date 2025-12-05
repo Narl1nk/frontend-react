@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { User } from '../types/User.types';
-import { userService } from '../services/user.service';
+import { User } from '../types';
+import { userService } from '../services';
 
 export const UserList: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -8,34 +8,35 @@ export const UserList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        const data = await userService.getAll();
-        setUsers(data);
-      } catch (error) {
-        setError('Failed to load users');
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUsers();
+    loadUsers();
   }, []);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await userService.getAll();
+      setUsers(data);
+    } catch (err) {
+      setError('Failed to load users');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDelete = async (id: number) => {
     try {
       await userService.delete(id);
       setUsers(users.filter(user => user.id !== id));
-    } catch (error) {
+    } catch (err) {
       setError('Failed to delete user');
-      console.error(error);
+      console.error(err);
     }
   };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
-
+  
   return (
     <div className="user-list">
       <h2>User List</h2>

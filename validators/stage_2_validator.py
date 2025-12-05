@@ -18,6 +18,7 @@ CRITICAL VALIDATIONS:
 import sys
 import os
 import json
+import yaml
 import re
 from pathlib import Path
 from typing import Dict, List, Set, Optional, Tuple
@@ -61,6 +62,37 @@ class Stage2Validator:
         # Track exported symbols from each file
         self.file_exports = {}  # file_path -> set of exported symbols
         self.file_imports = {}  # file_path -> list of (imported_symbols, from_path)
+    
+    def load_openapi_file(self, file_path: str) -> Optional[dict]:
+        """Load OpenAPI file supporting both JSON and YAML formats"""
+        # Try JSON first
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r') as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                pass  # Not JSON, try YAML
+        
+        # Try YAML if JSON failed or doesn't exist
+        yaml_path = file_path.replace('.json', '.yaml')
+        if os.path.exists(yaml_path):
+            try:
+                with open(yaml_path, 'r') as f:
+                    return yaml.safe_load(f)
+            except yaml.YAMLError as e:
+                print_error(f"Error parsing YAML file {yaml_path}: {e}")
+                return None
+        
+        # Try original path as YAML
+        if file_path.endswith('.yaml') or file_path.endswith('.yml'):
+            try:
+                with open(file_path, 'r') as f:
+                    return yaml.safe_load(f)
+            except yaml.YAMLError as e:
+                print_error(f"Error parsing YAML file {file_path}: {e}")
+                return None
+        
+        return None
         
     def load_inputs(self) -> bool:
         """Load ERD and OpenAPI files"""
@@ -76,13 +108,16 @@ class Stage2Validator:
                     operations = entity.get('operations', [])
                     self.entity_operations[entity_name] = operations
             
-            # Load OpenAPI JSON
-            with open(self.openapi_path, 'r') as f:
-                openapi_data = json.load(f)
-                paths = openapi_data.get('paths', {})
-                
-                # Extract entities that have API endpoints
-                for path in paths.keys():
+            # Load OpenAPI (JSON or YAML)
+            openapi_data = self.load_openapi_file(self.openapi_path)
+            if openapi_data is None:
+                print_error(f"Failed to load OpenAPI file: {self.openapi_path}")
+                return False
+            
+            paths = openapi_data.get('paths', {})
+            
+            # Extract entities that have API endpoints
+            for path in paths.keys():
                     # Extract entity name from path like /api/users or /api/v1/users
                     match = re.search(r'/api/(?:v\d+/)?(\w+)', path)
                     if match:
@@ -1143,10 +1178,64 @@ if __name__ == "__main__":
             print(f"  Entities with endpoints: {len(self.openapi_entities)}")
             return True
 
+
+    def validate_stage_output(self):
+        """Validate stage_2_output.json completeness"""
+        print_section("STAGE OUTPUT VALIDATION")
+        
+        output_file = Path("output/stage_2_output.json")
+        
+        if not output_file.exists():
+            print_error("output/stage_2_output.json not found")
+            return
+        
+        try:
+            with open(output_file, 'r') as f:
+                output_data = json.load(f)
+            
+            if 'files' not in output_data:
+                print_error("output/stage_2_output.json missing 'files' key")
+                return
+            
+            documented_files = set(output_data['files'].keys())
+            
+            # Scan actual project files
+            actual_files = set()
+            src_path = Path("generated_project/src")
+            
+            if src_path.exists():
+                for root, dirs, files in os.walk(src_path):
+                    for file in files:
+                        if file.endswith(('.ts', '.tsx')) and not file.endswith('.d.ts'):
+                            full_path = Path(root) / file
+                            rel_path = full_path.relative_to(Path("generated_project"))
+                            actual_files.add(str(rel_path))
+            
+            # Check all actual files are documented
+            undocumented = actual_files - documented_files
+            if undocumented:
+                print_error(f"Files not documented in stage_2_output.json:")
+                for file in sorted(undocumented):
+                    print(f"  - {file}")
+            
+            # Check all documented files exist
+            missing = documented_files - actual_files
+            if missing:
+                print_error(f"Documented files that don't exist:")
+                for file in sorted(missing):
+                    print(f"  - {file}")
+            
+            if not undocumented and not missing:
+                print_success(f"All {len(actual_files)} files properly documented")
+            
+        except json.JSONDecodeError as e:
+            print_error(f"Invalid JSON in stage_2_output.json: {e}")
+        except Exception as e:
+            print_error(f"Error validating stage output: {e}")
 def main():
     if len(sys.argv) != 3:
-        print_error("Usage: python3 stage_2_validator.py <erd.json> <openapi.json>")
-        print_info("Example: python3 validators/stage_2_validator.py output/erd.json output/openapi.json")
+        print_error("Usage: python3 stage_2_validator.py <erd.json> <openapi.yaml>")
+        print_info("Example: python3 validators/stage_2_validator.py output/erd.json input/openapi.yaml")
         sys.exit(1)
     
     erd_path = sys.argv[1]

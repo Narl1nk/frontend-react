@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { UserCreate, UserUpdate } from '../types/User.types';
-import { userService } from '../services/user.service';
+import { UserCreate, UserUpdate } from '../types';
+import { userService } from '../services';
 
 interface UserFormProps {
   user?: UserUpdate;
@@ -15,8 +15,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSubmit }) => {
   const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData({...formData, [e.target.name]: e.target.value});
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,9 +28,9 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSubmit }) => {
         await userService.create(formData);
       }
       onSubmit?.();
-    } catch (error) {
+    } catch (err) {
       setError('Failed to save user');
-      console.error(error);
+      console.error(err);
     } finally {
       setLoading(false);
     }

@@ -453,10 +453,67 @@ export * from './AuthContext';
 
 ---
 
-### Step 11: Validation
+### Step 11: Generate Stage Output Documentation
+
+**Create:** `output/stage_5_output.json`
+
+**Structure:**
+```json
+{
+  "stage": 5,
+  "timestamp": "2025-12-04T10:30:00Z",
+  "files": {
+    "src/App.tsx": {
+      "description": "Root application component integrating router and providers",
+      "exports": ["App"]
+    },
+    "src/main.tsx": {
+      "description": "Application entry point with React 18 createRoot",
+      "exports": []
+    },
+    "src/App.css": {
+      "description": "Global application styles and component styling",
+      "exports": []
+    },
+    "src/index.css": {
+      "description": "CSS reset and base typography styles",
+      "exports": []
+    },
+    "src/context/AuthContext.tsx": {
+      "description": "Authentication context with login/logout functionality",
+      "exports": ["AuthProvider", "useAuth"]
+    },
+    "src/context/index.ts": {
+      "description": "Barrel export for context providers",
+      "exports": ["*"]
+    },
+    "index.html": {
+      "description": "HTML template with root element",
+      "exports": []
+    }
+  }
+}
+```
+
+**Generation Rules:**
+1. Include ALL files created in this stage
+2. File paths relative to generated_project/ (except HTML at root)
+3. Document all exports from each file
+4. Timestamp in ISO-8601 format
+5. CSS/HTML files have empty exports array
+6. Do NOT include modified files (like package.json or .env)
+
+**Create:**
+```bash
+builtin_create_new_file: output/stage_5_output.json
+```
+
+---
+
+### Step 12: Validation
 
 ```bash
-builtin_run_terminal_command: python3 validators/stage_5_validator.py output/erd.json output/openapi.json
+builtin_run_terminal_command: python3 validators/stage_5_validator.py output/erd.json input/openapi.yaml
 ```
 
 **If fails**: Fix files and re-validate
@@ -474,10 +531,11 @@ builtin_run_terminal_command: python3 validators/stage_5_validator.py output/erd
 5. **Context providers** = Wrap in correct order (Auth → Theme → Router)
 6. **Package.json** = Update, don't replace
 7. **API paths MUST match** openapi.json exactly - verify and fix if needed
-7. **HTML template** = Create only if missing
-8. **TypeScript types** = All components properly typed
-9. **ES6 imports** = Use import/export statements
-10. **Validation required** = Must pass before completion
+8. **HTML template** = Create only if missing
+9. **TypeScript types** = All components properly typed
+10. **ES6 imports** = Use import/export statements
+11. **Output documentation** = Generate stage_5_output.json with all files
+12. **Validation required** = Must pass before completion
 
 ---
 
@@ -528,13 +586,14 @@ index.html
 - [ ] All imports resolve correctly
 - [ ] TypeScript types complete
 - [ ] No modifications to previous stages
+- [ ] stage_5_output.json generated with all files
 - [ ] Validation passes
 
 ---
 
 ## Agent Mode
 
-**Execute**: read inputs → check auth requirements → generate App.tsx → generate main.tsx → generate App.css → generate index.css → generate AuthContext (conditional) → generate index.html (if missing) → update package.json → verify backend connection → create context barrel exports → validate → fix if needed → complete
+**Execute**: read inputs → check auth requirements → generate App.tsx → generate main.tsx → generate App.css → generate index.css → generate AuthContext (conditional) → generate index.html (if missing) → update package.json → verify backend connection → create context barrel exports → generate output documentation → validate → fix if needed → complete
 
 **REMINDER**: Use `builtin_create_new_file` for file creation
 
@@ -559,3 +618,4 @@ index.html
 * TypeScript compliant
 * Application runs with `npm run dev`
 * No modifications to previous stage files
+* stage_5_output.json contains all generated files

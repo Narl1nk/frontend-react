@@ -324,10 +324,66 @@ export * from './Sidebar'; // if created
 
 ---
 
-### Step 10: Validation
+### Step 10: Generate Stage Output Documentation
+
+**Create:** `output/stage_4_output.json`
+
+**Structure:**
+```json
+{
+  "stage": 4,
+  "timestamp": "2025-12-04T10:30:00Z",
+  "files": {
+    "src/views/Home.tsx": {
+      "description": "Home/dashboard view with quick links",
+      "exports": ["Home"]
+    },
+    "src/views/NotFound.tsx": {
+      "description": "404 error page",
+      "exports": ["NotFound"]
+    },
+    "src/router/routes.ts": {
+      "description": "Route path constants and configuration",
+      "exports": ["ROUTES", "RouteConfig", "routeConfig"]
+    },
+    "src/router/index.tsx": {
+      "description": "Main router setup with all routes",
+      "exports": ["AppRouter"]
+    },
+    "src/components/Layout.tsx": {
+      "description": "Main layout wrapper component",
+      "exports": ["Layout"]
+    },
+    "src/components/Navbar.tsx": {
+      "description": "Navigation bar component",
+      "exports": ["Navbar"]
+    },
+    "src/components/Sidebar.tsx": {
+      "description": "Sidebar navigation component",
+      "exports": ["Sidebar"]
+    }
+  }
+}
+```
+
+**Generation Rules:**
+1. Include ALL files created in this stage
+2. File paths relative to generated_project/
+3. Document all exports from each file
+4. Timestamp in ISO-8601 format
+5. Do NOT include updated barrel export files (index.ts)
+
+**Create:**
+```bash
+builtin_create_new_file: output/stage_4_output.json
+```
+
+---
+
+### Step 11: Validation
 
 ```bash
-builtin_run_terminal_command: python3 validators/stage_4_validator.py output/erd.json output/openapi.json
+builtin_run_terminal_command: python3 validators/stage_4_validator.py output/erd.json input/openapi.yaml
 ```
 
 **If fails**: Fix files and re-validate
@@ -348,6 +404,7 @@ builtin_run_terminal_command: python3 validators/stage_4_validator.py output/erd
 8. **ES6 imports** = Use import/export statements
 9. **Barrel exports** = Update existing index.ts files, don't replace
 10. **Sidebar conditional** = Only create if more than 3 entities
+11. **Output documentation** = Generate stage_4_output.json with all files
 
 ---
 
@@ -399,13 +456,14 @@ Layout
 - [ ] All barrel exports updated (not replaced)
 - [ ] TypeScript types complete
 - [ ] No duplicate entity views created
+- [ ] stage_4_output.json generated with all files
 - [ ] Validation passes
 
 ---
 
 ## Agent Mode
 
-**Execute**: read inputs → scan existing entity views → generate home view → generate notfound view → generate route definitions (for existing views) → generate router setup → generate layout → generate navbar → generate sidebar (conditional) → update barrel exports → validate → fix if needed → complete
+**Execute**: read inputs → scan existing entity views → generate home view → generate notfound view → generate route definitions (for existing views) → generate router setup → generate layout → generate navbar → generate sidebar (conditional) → update barrel exports → generate output documentation → validate → fix if needed → complete
 
 **REMINDER**: Use `builtin_create_new_file` for every file creation
 
@@ -425,3 +483,4 @@ Layout
 * React Router v6 patterns used
 * No modification to existing entity views or components
 * No duplicate entity views created
+* stage_4_output.json contains all generated files

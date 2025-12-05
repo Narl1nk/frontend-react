@@ -1,8 +1,8 @@
 export interface User {
   id: number; // primary key, auto increment
-  email: string; // unique constraint, max length: 255
-  createdAt: string; // required
-  updatedAt: string; // required
+  email: string; // required, unique, max length: 255
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface UserCreate {
@@ -10,7 +10,7 @@ export interface UserCreate {
 }
 
 export interface UserUpdate {
-  id: number;  
+  id: number;
   email?: string;
 }
 

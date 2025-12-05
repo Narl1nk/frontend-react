@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 
-interface UsePaginationReturn {
+interface Pagination {
   currentPage: number;
   totalPages: number;
   startIndex: number;
@@ -12,23 +12,31 @@ interface UsePaginationReturn {
   canGoPrevious: boolean;
 }
 
-function usePagination(totalItems: number, itemsPerPage: number = 10, initialPage: number = 1): UsePaginationReturn {
+/**
+ * Custom React hook for pagination logic.
+ * @param totalItems Total number of items.
+ * @param itemsPerPage Number of items per page.
+ * @param initialPage Initial page to display.
+ */
+export function usePagination(totalItems: number, itemsPerPage: number, initialPage: number = 1): Pagination {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
+  // Calculate indices for items to display
+  const startIndex = useMemo(() => (currentPage - 1) * itemsPerPage, [currentPage, itemsPerPage]);
+  const endIndex = useMemo(() => Math.min(startIndex + itemsPerPage - 1, totalItems - 1), [startIndex, itemsPerPage, totalItems]);
 
+  // Navigation functions
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
   const nextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+    setCurrentPage(prevPage => Math.min(prevPage + 1, totalPages));
   };
 
   const previousPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
+    setCurrentPage(prevPage => Math.max(prevPage - 1, 1));
   };
 
   const canGoNext = currentPage < totalPages;
@@ -46,5 +54,3 @@ function usePagination(totalItems: number, itemsPerPage: number = 10, initialPag
     canGoPrevious
   };
 }
-
-export default usePagination;
